@@ -1,0 +1,323 @@
+{
+  "entities": {
+    "Article": {
+      "title": "Article",
+      "description": "News article document in BatuTV",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string", "minLength": 5, "maxLength": 300 },
+        "slug": { "type": "string", "minLength": 3, "maxLength": 300 },
+        "excerpt": { "type": "string", "maxLength": 1000 },
+        "content": { "type": "string" },
+        "featuredImage": { "type": "string" },
+        "featuredImageMediaId": { "type": "string" },
+        "imageCaption": { "type": "string" },
+        "imageAlt": { "type": "string" },
+        "category": { "type": "string" },
+        "categorySlug": { "type": "string" },
+        "categoryId": { "type": "string" },
+        "author": { "type": "string" },
+        "authorId": { "type": "string" },
+        "editor": { "type": "string" },
+        "authorRole": { "type": "string" },
+        "authorAvatar": { "type": "string" },
+        "tags": { "type": "array" },
+        "status": { "type": "string", "enum": ["published", "draft", "scheduled", "trash"] },
+        "views": { "type": "number" },
+        "publishedAt": { "type": "string" },
+        "scheduledAt": { "type": "string" },
+        "readTime": { "type": "string" },
+        "isHeadline": { "type": "boolean" },
+        "headlinePosition": { "type": "number" },
+        "headlineUntil": { "type": "string" },
+        "seoTitle": { "type": "string" },
+        "metaDescription": { "type": "string" },
+        "canonicalUrl": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["title", "slug", "content", "status", "category", "featuredImage"]
+    },
+    "Video": {
+      "title": "Video",
+      "description": "Video news and livestreams document in BatuTV",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string", "minLength": 5, "maxLength": 300 },
+        "slug": { "type": "string", "minLength": 3, "maxLength": 300 },
+        "excerpt": { "type": "string" },
+        "description": { "type": "string" },
+        "youtubeUrl": { "type": "string" },
+        "youtubeVideoId": { "type": "string" },
+        "thumbnailSource": { "type": "string", "enum": ["youtube", "custom"] },
+        "customThumbnail": { "type": "string" },
+        "thumbnailMediaId": { "type": "string" },
+        "customThumbnailAlt": { "type": "string" },
+        "customThumbnailCaption": { "type": "string" },
+        "duration": { "type": "string" },
+        "category": { "type": "string" },
+        "categorySlug": { "type": "string" },
+        "author": { "type": "string" },
+        "authorId": { "type": "string" },
+        "tags": { "type": "array" },
+        "status": { "type": "string", "enum": ["published", "draft", "archived", "trash"] },
+        "publishedAt": { "type": "string" },
+        "scheduledAt": { "type": "string" },
+        "views": { "type": "number" },
+        "isFeatured": { "type": "boolean" },
+        "isLiveStream": { "type": "boolean" },
+        "seoTitle": { "type": "string" },
+        "metaDescription": { "type": "string" },
+        "canonicalUrl": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["title", "slug", "youtubeUrl", "status"]
+    },
+    "Category": {
+      "title": "Category",
+      "description": "Category taxonomy for news and videos",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string", "minLength": 2, "maxLength": 100 },
+        "slug": { "type": "string", "minLength": 2, "maxLength": 100 },
+        "description": { "type": "string" },
+        "parentId": { "type": "string" },
+        "contentTypes": { "type": "array" },
+        "status": { "type": "string", "enum": ["active", "inactive"] },
+        "seoTitle": { "type": "string" },
+        "metaDescription": { "type": "string" },
+        "canonicalUrl": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["name", "slug", "status"]
+    },
+    "Tag": {
+      "title": "Tag",
+      "description": "Tag taxonomy for topics and hashtags",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string", "minLength": 2, "maxLength": 100 },
+        "slug": { "type": "string", "minLength": 2, "maxLength": 100 },
+        "contentTypes": { "type": "array" },
+        "status": { "type": "string", "enum": ["active", "inactive"] },
+        "seoTitle": { "type": "string" },
+        "metaDescription": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["name", "slug", "status"]
+    },
+    "Author": {
+      "title": "Author",
+      "description": "Author and journalist profiles",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string", "minLength": 2, "maxLength": 150 },
+        "slug": { "type": "string", "minLength": 2, "maxLength": 150 },
+        "position": { "type": "string", "enum": ["Reporter", "Editor", "Redaksi", "Kontributor"] },
+        "email": { "type": "string" },
+        "phone": { "type": "string" },
+        "bio": { "type": "string" },
+        "photoUrl": { "type": "string" },
+        "photoMediaId": { "type": "string" },
+        "status": { "type": "string", "enum": ["active", "inactive"] },
+        "seoTitle": { "type": "string" },
+        "metaDescription": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["name", "slug", "position", "email", "status"]
+    },
+    "Media": {
+      "title": "Media",
+      "description": "Media library assets metadata",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "filename": { "type": "string" },
+        "originalName": { "type": "string" },
+        "mimeType": { "type": "string" },
+        "extension": { "type": "string" },
+        "mediaType": { "type": "string", "enum": ["image", "document", "other"] },
+        "fileSize": { "type": "number" },
+        "width": { "type": "number" },
+        "height": { "type": "number" },
+        "altText": { "type": "string" },
+        "caption": { "type": "string" },
+        "description": { "type": "string" },
+        "url": { "type": "string" },
+        "sizes": { "type": "object" },
+        "usageCount": { "type": "number" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["filename", "url", "mimeType", "mediaType"]
+    },
+    "SiteSettings": {
+      "title": "SiteSettings",
+      "description": "Global website configuration singleton",
+      "type": "object",
+      "properties": {
+        "identity": { "type": "object" },
+        "logos": { "type": "object" },
+        "favicon": { "type": "object" },
+        "colors": { "type": "object" },
+        "typography": { "type": "object" },
+        "seo": { "type": "object" },
+        "publisher": { "type": "object" },
+        "socialMedia": { "type": "object" },
+        "verification": { "type": "object" },
+        "updatedAt": { "type": "string" },
+        "updatedBy": { "type": "string" }
+      }
+    },
+    "Page": {
+      "title": "Page",
+      "description": "Static information page",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "slug": { "type": "string" },
+        "content": { "type": "string" },
+        "excerpt": { "type": "string" },
+        "status": { "type": "string", "enum": ["published", "draft"] },
+        "seoTitle": { "type": "string" },
+        "metaDescription": { "type": "string" },
+        "featuredImageUrl": { "type": "string" },
+        "featuredImageMediaId": { "type": "string" },
+        "publishedAt": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["title", "slug", "content", "status"]
+    },
+    "Navigation": {
+      "title": "Navigation",
+      "description": "Hierarchical site navigation structure",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "label": { "type": "string" },
+        "type": { "type": "string", "enum": ["internal", "external"] },
+        "targetType": { "type": "string", "enum": ["kategori", "page", "custom"] },
+        "targetId": { "type": "string" },
+        "url": { "type": "string" },
+        "slug": { "type": "string" },
+        "parentId": { "type": "string" },
+        "sortOrder": { "type": "number" },
+        "active": { "type": "boolean" },
+        "openNewTab": { "type": "boolean" },
+        "icon": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["label", "url", "slug", "active"]
+    },
+    "Footer": {
+      "title": "Footer",
+      "description": "Footer configuration singleton document",
+      "type": "object",
+      "properties": {
+        "mediaInfo": { "type": "object" },
+        "companyLinks": { "type": "object" },
+        "legalLinks": { "type": "object" },
+        "socialMedia": { "type": "object" },
+        "copyright": { "type": "object" },
+        "logo": { "type": "object" },
+        "mediaNetworks": { "type": "array" },
+        "updatedAt": { "type": "string" },
+        "updatedBy": { "type": "string" }
+      }
+    },
+    "SystemSettings": {
+      "title": "SystemSettings",
+      "description": "System maintenance and security singleton configuration",
+      "type": "object",
+      "properties": {
+        "maintenance": { "type": "object" },
+        "security": { "type": "object" },
+        "updatedAt": { "type": "string" }
+      }
+    },
+    "CMSUser": {
+      "title": "CMSUser",
+      "description": "CMS authenticated users with RBAC roles",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "fullName": { "type": "string" },
+        "username": { "type": "string" },
+        "email": { "type": "string" },
+        "role": { "type": "string", "enum": ["admin", "redaksi", "editor", "reporter", "kontributor"] },
+        "status": { "type": "string", "enum": ["aktif", "nonaktif", "ditangguhkan"] },
+        "authorId": { "type": "string" },
+        "lastLogin": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["username", "email", "fullName", "role", "status"]
+    }
+  },
+  "firestore": {
+    "/articles/{articleId}": {
+      "schema": "Article",
+      "description": "Public news articles and editorial content"
+    },
+    "/videos/{videoId}": {
+      "schema": "Video",
+      "description": "Video news and livestreams"
+    },
+    "/categories/{categoryId}": {
+      "schema": "Category",
+      "description": "Primary categories taxonomy"
+    },
+    "/tags/{tagId}": {
+      "schema": "Tag",
+      "description": "Tags and trending topics taxonomy"
+    },
+    "/authors/{authorId}": {
+      "schema": "Author",
+      "description": "Author and journalist profiles"
+    },
+    "/media/{mediaId}": {
+      "schema": "Media",
+      "description": "Media library assets metadata"
+    },
+    "/site_settings/{settingId}": {
+      "schema": "SiteSettings",
+      "description": "Global website configuration singleton"
+    },
+    "/pages/{pageId}": {
+      "schema": "Page",
+      "description": "Static legal and info pages"
+    },
+    "/navigation/{navId}": {
+      "schema": "Navigation",
+      "description": "Hierarchical navigation links and items"
+    },
+    "/footer/{footerId}": {
+      "schema": "Footer",
+      "description": "Portal footer and network links configuration"
+    },
+    "/system_settings/{settingId}": {
+      "schema": "SystemSettings",
+      "description": "System maintenance and operational configuration"
+    },
+    "/admins/{adminUid}": {
+      "schema": "CMSUser",
+      "description": "Authorized administrators and staff"
+    },
+    "/users/{userId}": {
+      "schema": "CMSUser",
+      "description": "CMS registered redaksional user accounts"
+    }
+  }
+}

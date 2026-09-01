@@ -1,0 +1,12 @@
+{
+  "projectId": "batutv-portal",
+  "appId": "1:358249286762:web:63141bd5448225a0428e13",
+  "apiKey": "AIzaSyA4fMEJDGRk1XqfLHWGEDjcuCtnn8D9zWo",
+  "authDomain": "batutv-portal.firebaseapp.com",
+  "firestoreDatabaseId": "(default)",
+  "storageBucket": "batutv-portal.firebasestorage.app",
+  "messagingSenderId": "358249286762",
+  "measurementId": "G-21E3PFG0EY",
+  "oAuthClientId": "",
+  "recaptchaSiteKey": ""
+}

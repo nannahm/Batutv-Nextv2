@@ -1,0 +1,181 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default deny all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // ====================================================
+    // AUTHENTICATION & RBAC HELPER FUNCTIONS
+    // ====================================================
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isSuperAdminEmail() {
+      return isSignedIn() && (
+        request.auth.token.email == 'innedzaky@gmail.com' ||
+        request.auth.token.email == 'rioirsyad72@gmail.com'
+      );
+    }
+
+    function getAdminDoc() {
+      return /databases/$(database)/documents/admins/$(request.auth.uid);
+    }
+
+    function getUserDoc() {
+      return /databases/$(database)/documents/users/$(request.auth.uid);
+    }
+
+    function getUserRole() {
+      return (request.auth.token.role != null)
+        ? request.auth.token.role
+        : exists(getAdminDoc())
+          ? get(getAdminDoc()).data.role
+          : exists(getUserDoc())
+            ? get(getUserDoc()).data.role
+            : 'guest';
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        isSuperAdminEmail() ||
+        getUserRole() == 'admin' ||
+        exists(getAdminDoc())
+      );
+    }
+
+    function isEditorial() {
+      return isAdmin() || getUserRole() in ['redaksi', 'editor'];
+    }
+
+    function isReporter() {
+      return isEditorial() || getUserRole() == 'reporter';
+    }
+
+    function isContributor() {
+      return isReporter() || getUserRole() == 'kontributor';
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isValidArticleStatus(status) {
+      return status in ['published', 'draft', 'scheduled', 'trash'];
+    }
+
+    function isValidVideoStatus(status) {
+      return status in ['published', 'draft', 'archived', 'trash'];
+    }
+
+    // ====================================================
+    // COLLECTION RULES
+    // ====================================================
+
+    // 1. Articles Collection
+    match /articles/{articleId} {
+      allow read: if resource.data.status == 'published' || isSignedIn();
+      allow create: if (isReporter() || isContributor()) &&
+                       isValidId(articleId) &&
+                       request.resource.data.title is string &&
+                       request.resource.data.title.size() >= 5 &&
+                       request.resource.data.slug is string &&
+                       isValidArticleStatus(request.resource.data.status);
+      allow update: if (isReporter() || isEditorial()) &&
+                       isValidId(articleId) &&
+                       request.resource.data.title is string &&
+                       isValidArticleStatus(request.resource.data.status);
+      allow delete: if isEditorial() && isValidId(articleId);
+    }
+
+    // 2. Videos Collection
+    match /videos/{videoId} {
+      allow read: if resource.data.status == 'published' || isSignedIn();
+      allow create: if isEditorial() &&
+                       isValidId(videoId) &&
+                       request.resource.data.title is string &&
+                       request.resource.data.youtubeUrl is string &&
+                       isValidVideoStatus(request.resource.data.status);
+      allow update: if isEditorial() &&
+                       isValidId(videoId) &&
+                       isValidVideoStatus(request.resource.data.status);
+      allow delete: if isEditorial() && isValidId(videoId);
+    }
+
+    // 3. Categories Collection
+    match /categories/{categoryId} {
+      allow read: if resource.data.status == 'active' || isSignedIn();
+      allow create, update, delete: if isEditorial() && isValidId(categoryId);
+    }
+
+    // 4. Tags Collection
+    match /tags/{tagId} {
+      allow read: if resource.data.status == 'active' || isSignedIn();
+      allow create, update, delete: if isEditorial() && isValidId(tagId);
+    }
+
+    // 5. Authors Collection
+    match /authors/{authorId} {
+      allow read: if resource.data.status == 'active' || isSignedIn();
+      allow create, update, delete: if isEditorial() && isValidId(authorId);
+    }
+
+    // 6. Media Collection
+    match /media/{mediaId} {
+      allow read: if true;
+      allow create, update, delete: if isSignedIn() && isValidId(mediaId);
+    }
+
+    // 7. Site Settings Collection (Singleton)
+    match /site_settings/{settingId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin() && isValidId(settingId);
+    }
+
+    // 8. Pages Collection
+    match /pages/{pageId} {
+      allow read: if resource.data.status == 'published' || isSignedIn();
+      allow create, update, delete: if isEditorial() && isValidId(pageId);
+    }
+
+    // 9. Navigation Collection
+    match /navigation/{navId} {
+      allow read: if true;
+      allow create, update, delete: if isEditorial() && isValidId(navId);
+    }
+
+    // 10. Footer Collection (Singleton)
+    match /footer/{footerId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin() && isValidId(footerId);
+    }
+
+    // 11. System Settings Collection
+    match /system_settings/{settingId} {
+      allow read: if isAdmin();
+      allow create, update, delete: if isAdmin() && isValidId(settingId);
+    }
+
+    // 12. Activity Logs Collection
+    match /activity_logs/{logId} {
+      allow read: if isAdmin();
+      allow create: if isSignedIn();
+      allow delete: if isAdmin();
+    }
+
+    // 13. Admins Collection
+    match /admins/{adminUid} {
+      allow read, write: if isAdmin() && isValidId(adminUid);
+    }
+
+    // 14. Users Collection
+    match /users/{userId} {
+      allow read: if isAdmin() || (isSignedIn() && request.auth.uid == userId);
+      allow write: if isAdmin() && isValidId(userId);
+    }
+  }
+}
