@@ -21,7 +21,9 @@
 - [x] Port `IArticleRepository` & `firestoreArticleRepository` to `features/articles/data/`
 - [x] Zod schema: `features/articles/schemas.ts`
 - [x] Server Actions: `features/articles/actions.ts` (create, update, delete, publish, toggle status)
-- [x] Public Route: `app/(portal)/berita/[slug]/page.tsx` with dynamic `generateMetadata()` and `generateStaticParams()`
+- [x] Adapter domain to view: `features/articles/adapters/articleMapper.ts` (`toNewsArticle`, `toAdminArticle`)
+- [x] Live Firestore data service: `features/articles/data/liveFirestoreService.ts` (with strict 404 vs error fallback)
+- [x] Public Route: `app/(portal)/berita/[slug]/page.tsx` with dynamic `generateMetadata()`, `generateStaticParams()`, and ISR 60s
 - [x] Public Route: `app/page.tsx` / homepage article feed & headline integration
 - [x] Admin Route: `app/(dashboard)/batutv-control/articles/` (Article List, Filter, Editor form)
 - [x] Dynamic Sitemap section: `app/sitemap.ts`
