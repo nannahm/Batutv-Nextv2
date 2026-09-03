@@ -60,6 +60,26 @@ Untuk pipeline CI/CD produksi mandiri penuh di luar sandbox:
    - Pendekatan ini rentan terhadap variasi penulisan atau typo editor.
    - **Rencana Mitigasi**: Pada Fase 6/7, ganti dengan field boolean eksplisit (`isBreaking: boolean`, `region: RegionEnum`) terstruktur di schema Firestore dan form admin CMS.
 
+2. **Migrasi Server Fetcher ke Firebase Admin SDK (D-002 Compliance)**:
+   - *Kondisi*: `generateStaticParams()` dan `generateMetadata()` di `app/(portal)/berita/[slug]/page.tsx` saat ini masih menggunakan Web Client SDK (`firebase/firestore`).
+   - *Penyebab*: Client SDK digunakan sebagai transisi cepat porting Fase 2 sebelum infrastruktur credentials Admin SDK dipasang.
+   - *Alasan Ditunda ke Fase 3*: Inisialisasi Firebase Admin SDK (`firebase-admin`) dijadwalkan secara utuh pada **Fase 3 (Authentication & RBAC)** untuk menangani token/session verification cookie httpOnly dan middleware. Memindahkan fetcher artikel sekarang sebelum arsitektur `firebase-admin` Fase 3 berdiri akan menyebabkan inisialisasi ganda dan fragmentasi arsitektur.
+   - *Rencana Mitigasi (Fase 3)*: Begitu modul server Admin SDK (`src/lib/firebaseAdmin.ts`) selesai di Fase 3, `liveFirestoreService.ts` akan dialihkan menggunakan Admin SDK untuk semua server-side runtime Next.js.
+
+## Status Keamanan & Lingkungan Database Firestore (Audit 2026-09-03)
+- **Status Database**: Project `batutv-next` (`(default)`) adalah **database resmi / riil BatuTV** (berisi data pengguna autentik seperti `dzakyinne@gmail.com`, dewan redaksi, dan artikel berita aktual).
+- **Audit firestore.rules**:
+  - *Temuan Sebelumnya*: Rule lama berada dalam test mode terbuka (`match /{document=**} { allow read, write: if true; }`).
+  - *Resolusi Terverifikasi*: Telah diperbaiki dan dideploy via `deploy_firebase` per 2026-09-03.
+  - *Kondisi Baru*:
+    - Koleksi `articles`: **Public read-only HANYA untuk status `published`** (`allow read: if resource.data.status == 'published'`). Draft dan scheduled news tertutup dari publik.
+    - Celah Public Write: **DITUTUP TOTAL** (`allow write: if isSuperAdminEmail()`). Tidak ada celah write publik tanpa autentikasi superadmin.
+    - Koleksi `users`: Ditutup dari publik (`allow read: if isSignedIn() && (request.auth.uid == userId || isSuperAdminEmail())`).
+- **Kebijakan Testing Sandbox**:
+  - Karena terhubung ke live database, operasi pengujian di sandbox dilarang keras melakukan write destruktif.
+  - Read query saat build dibatasi ketat (`limit(30)` untuk SSG dan `limit(1)` untuk detail).
+  - Evaluasi penggunaan Firestore Emulator / static mock data layer untuk CI/CD pipeline luar sebelum Fase 7.
+
 ## Temuan Audit & Resolusi Riil (2026-09-02)
 1. **Status Build Next.js (`npx next build --webpack`)**:
    - **Hasil**: Lolos bersih `EXIT: 0`.

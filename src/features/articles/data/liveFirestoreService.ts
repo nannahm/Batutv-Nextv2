@@ -24,17 +24,18 @@ const COLLECTION_NAME = 'articles';
 export async function fetchArticleBySlugLive(slug: string): Promise<ArticleFetchResult> {
   try {
     const colRef = collection(db, COLLECTION_NAME);
-    const q = query(colRef, where('slug', '==', slug), limit(1));
+    const q = query(
+      colRef,
+      where('slug', '==', slug),
+      where('status', '==', 'published'),
+      limit(1)
+    );
     const snap = await getDocs(q);
 
     if (!snap.empty) {
       const docSnap = snap.docs[0];
       const article = fromArticleFirestoreDocument(docSnap.id, docSnap.data());
-      // Check status: only published articles can be shown on public portal
-      if (article.status === 'published') {
-        return { source: 'firestore', article };
-      }
-      return { source: 'not-found', article: null };
+      return { source: 'firestore', article };
     }
 
     // Firestore query executed successfully, document genuinely does not exist
