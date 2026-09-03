@@ -110,20 +110,35 @@
   2. *Admin SDK Server Fetcher*: Memindahkan data fetcher server-side dari Client SDK ke Firebase Admin SDK (D-002).
   3. *Protokol Deploy Infrastruktur*: Penggunaan tool `deploy_firebase` untuk perubahan infrastruktur di luar darurat keamanan wajib memerlukan persetujuan eksplisit dari tim teknis/user.
 
-### D-018: Arsitektur Keamanan Bertingkat: Edge Runtime Middleware Session Guard & Node.js Server Verification (2026-09-03)
+### D-018: Arsitektur Keamanan Bertingkat: Edge Runtime Middleware Session Guard, Server Component Layout Verification, & Node.js Actions (2026-09-03)
 - **Konteks & Kendala**:
-  Next.js Middleware berjalan di Edge Runtime yang secara fundamental tidak mendukung modul Node.js tingkat rendah (`net`, `tls`, `dns`) yang diwajibkan oleh Google gRPC / `firebase-admin/auth` untuk parsing sertifikat kriptografis x509 dan validasi session cookie secara lokal. Mengimpor `firebase-admin` ke dalam `middleware.ts` menyebabkan fatal build error (`A Node.js API is used which is not supported in the Edge Runtime`).
+  Next.js Middleware berjalan di Edge Runtime yang secara fundamental tidak mendukung modul Node.js tingkat rendah (`net`, `tls`, `dns`) yang diwajibkan oleh Google gRPC / `firebase-admin/auth` untuk parsing sertifikat kriptografis x509 dan validasi session cookie secara lokal. Jika verifikasi hanya diletakkan di middleware sebagai pemeriksaan keberadaan cookie semata tanpa verifikasi di level render Server Component, penyerang dengan cookie palsu (`__session=dummy`) berpotensi melihat tampilan Server Component sebelum aksi mutasi data dipanggil.
 - **Keputusan Arsitektur**:
-  Menerapkan arsitektur keamanan dua lapis (Defense-in-Depth):
+  Menerapkan arsitektur keamanan tiga lapis (Defense-in-Depth):
   1. *Lapisan 1 (Fast Edge Guard di `middleware.ts`)*:
      - Memeriksa keberadaan cookie sesi httpOnly (`__session`).
      - Jika cookie tidak ada, request ke `/batutv-control/*` langsung di-short-circuit dan di-redirect ke `/login?redirect=...` dengan overhead ~0ms di edge.
-     - Meneruskan header identifikasi internal (`x-authenticated-admin`).
-  2. *Lapisan 2 (Cryptographic & RBAC Verification di Node.js Server Runtime)*:
-     - Endpoint penukaran token (`/api/auth/session`) berjalan di Node.js Server Runtime, memvalidasi ID token dari Firebase Auth dengan `adminAuth.verifyIdToken()`, dan mencetak cookie httpOnly berdurasi 5 hari via `adminAuth.createSessionCookie()`.
-     - Server Actions (`setUserRoleAction`) dan CMS admin API routes memvalidasi session cookie dan custom claims (`role`) secara kriptografis menggunakan `adminAuth.verifySessionCookie(cookie, true)`.
+  2. *Lapisan 2 (Render-Level Cryptographic Verification di Server Component Layout `DashboardControlLayout`)*:
+     - Berjalan di Node.js Server Runtime sebelum halaman anak dashboard dirender.
+     - Mengekstrak `__session` via `await cookies()` dan memvalidasi keabsahan tanda tangan kriptografis serta status revocation via `await adminAuth.verifySessionCookie(sessionCookie, true)`.
+     - Jika cookie tidak valid, expired, atau dimanipulasi, server langsung melempar `redirect('/login?redirect=...')`. Tidak ada sekelumit pun UI sensitif/redaksi yang ter-render ke browser penyerang.
+  3. *Lapisan 3 (Action & API Level RBAC Verification)*:
+     - Endpoint penukaran token (`/api/auth/session`), Server Actions (`setUserRoleAction`), dan CMS admin API routes memverifikasi token dan hak akses spesifik (role superadmin/editor/reporter).
 - **Konsekuensi**:
   - `middleware.ts` tetap sangat ringan dan kompatibel penuh dengan edge routing Next.js tanpa kompromi performa.
-  - Keamanan data admin tetap terjamin 100% karena seluruh mutasi data sensitif dan akses API dilindungi oleh verifikasi kriptografis Firebase Admin SDK di server.
+  - Celah pembacaan UI/HTML dashboard tertutup 100% karena layout server menolak render jika cookie tidak tervalidasi secara kriptografis.
+
+### D-019: Eliminasi Client SDK Fallback pada Server-Side Data Fetcher `liveFirestoreService` (2026-09-03)
+- **Konteks & Masalah**:
+  Implementasi awal Sub-Task 2 menyediakan fallback 3-tingkat: Admin SDK -> Client SDK -> Static Seed Cache. Ketergantungan pada Client SDK di server context menimbulkan dua risiko:
+  1. Menutupi kegagalan konfigurasi kredensial Admin SDK secara diam-diam.
+  2. Menciptakan ketergantungan kembali pada rules Firestore publik yang bertentangan dengan prinsip pemisahan tanggung jawab D-002.
+- **Keputusan**:
+  Menyederhanakan alur data fetcher server menjadi 2-tingkat deterministik:
+  - *Tier 1*: Firebase Admin SDK (`getAdminFirestore()`) dengan query filter eksplisit `where('status', '==', 'published')`.
+  - *Tier 2*: Static Seed Cache (`initialAdminArticles`) jika koneksi Firestore offline, error, atau koleksi kosong.
+- **Konsekuensi**:
+  - Bundle server bersih dari import Client SDK Firestore (`firebase/firestore`).
+  - Perilaku data fetching menjadi predictable, aman, dan mematuhi D-002 secara mutlak.
 
 
