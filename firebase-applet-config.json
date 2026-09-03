@@ -1,0 +1,12 @@
+{
+  "projectId": "batutv-next",
+  "appId": "1:1046515034011:web:5ab8c33498d5747d69a33e",
+  "apiKey": "AIzaSyCdC_ngs80t7srxlDkIgXJSB4rMK7wyW2w",
+  "authDomain": "batutv-next.firebaseapp.com",
+  "firestoreDatabaseId": "(default)",
+  "storageBucket": "batutv-next.firebasestorage.app",
+  "messagingSenderId": "1046515034011",
+  "measurementId": "G-PSJ6YFZR8W",
+  "oAuthClientId": "",
+  "recaptchaSiteKey": ""
+}

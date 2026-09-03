@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:news="http://www.google.com/schemas/sitemap-news/0.9">
+  <url>
+    <loc>https://batutv.com/berita/menkes-ajak-anggota-dpr-bantu-warga-ntt</loc>
+    <news:news>
+      <news:publication>
+        <news:name>BATUTV</news:name>
+        <news:language>id</news:language>
+      </news:publication>
+      <news:publication_date>2026-08-28T09:15:00+07:00</news:publication_date>
+      <news:title>Menkes Ajak Anggota DPR Bantu Warga NTT Terdampak Bencana</news:title>
+      <news:keywords>Menkes, DPR, NTT, Bantuan Kemanusiaan, Kesehatan</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://batutv.com/berita/apel-akbar-pemuda-pancasila-di-batu</loc>
+    <news:news>
+      <news:publication>
+        <news:name>BATUTV</news:name>
+        <news:language>id</news:language>
+      </news:publication>
+      <news:publication_date>2026-08-28T08:30:00+07:00</news:publication_date>
+      <news:title>Apel Akbar Pemuda Pancasila Digelar di Kota Batu, Perkuat Sinergi Ormas dan Masyarakat</news:title>
+      <news:keywords>Pemuda Pancasila, Ormas, Kota Batu, Apel Akbar</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://batutv.com/berita/revitalisasi-pasar-induk-among-tani-kota-batu</loc>
+    <news:news>
+      <news:publication>
+        <news:name>BATUTV</news:name>
+        <news:language>id</news:language>
+      </news:publication>
+      <news:publication_date>2026-08-28T07:45:00+07:00</news:publication_date>
+      <news:title>Revitalisasi Pasar Induk Among Tani Kota Batu Tingkatkan Ekonomi Pedagang Lokal</news:title>
+      <news:keywords>Pasar Among Tani, Ekonomi Batu, Revitalisasi Pasar, UMKM</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://batutv.com/berita/festival-bunga-dan-buah-batu-2026</loc>
+    <news:news>
+      <news:publication>
+        <news:name>BATUTV</news:name>
+        <news:language>id</news:language>
+      </news:publication>
+      <news:publication_date>2026-08-28T06:20:00+07:00</news:publication_date>
+      <news:title>Festival Bunga dan Buah Kota Batu 2026 Tarik Ribuan Wisatawan Domestik dan Mancanegara</news:title>
+      <news:keywords>Festival Bunga, Wisata Batu, Pariwisata, Buah Apel</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://batutv.com/berita/pembukaan-jalur-wisata-paralayang-batu</loc>
+    <news:news>
+      <news:publication>
+        <news:name>BATUTV</news:name>
+        <news:language>id</news:language>
+      </news:publication>
+      <news:publication_date>2026-08-27T16:00:00+07:00</news:publication_date>
+      <news:title>Pembukaan Jalur Wisata Paralayang Batu Dilengkapi Fasilitas Keamanan Modern</news:title>
+      <news:keywords>Paralayang, Wisata Gunung Banyak, Kota Batu, Destinasi</news:keywords>
+    </news:news>
+  </url>
+</urlset>

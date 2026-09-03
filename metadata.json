@@ -1,0 +1,6 @@
+{
+  "name": "BatuTV News Portal",
+  "description": "Portal Berita Terkini, Akurat, dan Terpercaya Kota Batu dan Nasional dari BatuTV",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

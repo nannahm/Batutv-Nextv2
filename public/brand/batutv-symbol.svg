@@ -1,0 +1,98 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 250" width="100%" height="100%" fill="none">
+  <defs>
+    <linearGradient id="btv-sym-wing-top" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stopColor="#ff4d5a" />
+      <stop offset="100%" stopColor="#e50914" />
+    </linearGradient>
+    <linearGradient id="btv-sym-wing-mid" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stopColor="#e50914" />
+      <stop offset="100%" stopColor="#b3000b" />
+    </linearGradient>
+    <linearGradient id="btv-sym-wing-deep" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stopColor="#b3000b" />
+      <stop offset="100%" stopColor="#660005" />
+    </linearGradient>
+    <linearGradient id="btv-sym-dark-base" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stopColor="#252930" />
+      <stop offset="60%" stopColor="#15171b" />
+      <stop offset="100%" stopColor="#0a0b0d" />
+    </linearGradient>
+  </defs>
+
+  <g id="btv-symbol" transform="translate(10, 15)">
+    <!-- Broadcast Waves: Outer Dashed Arc -->
+    <path
+      d="M 195 38 C 248 80, 248 152, 195 194"
+      stroke="#555c68"
+      stroke-width="5"
+      stroke-linecap="round"
+      stroke-dasharray="8 10"
+      fill="none"
+      opacity="0.85"
+    />
+
+    <!-- Broadcast Waves: Inner Solid Red Arc -->
+    <path
+      d="M 175 52 C 218 85, 218 145, 175 178"
+      stroke="#e50914"
+      stroke-width="6.5"
+      stroke-linecap="round"
+      fill="none"
+    />
+
+    <!-- Main Solid Base 'B' Silhouette -->
+    <path
+      d="M 42 28 H 122 C 158 28 178 48 178 76 C 178 94 165 106 146 112 C 172 118 186 134 186 160 C 186 190 160 206 122 206 H 42 V 28 Z"
+      fill="url(#btv-sym-dark-base)"
+    />
+
+    <!-- Upper Inner Counter Cutout (Crisp White) -->
+    <path
+      d="M 76 54 H 118 C 136 54 146 62 146 75 C 146 88 136 96 118 96 H 76 V 54 Z"
+      fill="#ffffff"
+    />
+
+    <!-- Lower Inner Counter Cutout -->
+    <path
+      d="M 76 138 H 118 C 138 138 150 148 150 162 C 150 176 138 184 118 184 H 76 V 138 Z"
+      fill="#ffffff"
+    />
+
+    <!-- Lower Left Red Accent Triangle Cutout -->
+    <polygon
+      points="76,184 135,184 76,142"
+      fill="#e50914"
+    />
+
+    <!-- 3D Faceted Dynamic Red Wing Overlay -->
+    <polygon
+      points="120,40 160,68 130,112 108,78"
+      fill="url(#btv-sym-wing-top)"
+    />
+    
+    <path
+      d="M 124 44 
+         C 155 52, 192 76, 190 108 
+         C 188 128, 172 144, 150 152 
+         C 176 164, 196 186, 174 212 
+         C 152 200, 130 176, 114 154 
+         C 134 136, 146 118, 144 98 
+         C 142 80, 132 60, 124 44 Z"
+      fill="url(#btv-sym-wing-mid)"
+    />
+
+    <polygon
+      points="130,112 178,146 142,196 114,154"
+      fill="url(#btv-sym-wing-deep)"
+      opacity="0.9"
+    />
+
+    <path
+      d="M 124 44 L 164 104 L 114 154"
+      stroke="#ff6b76"
+      stroke-width="1.8"
+      fill="none"
+      opacity="0.75"
+    />
+  </g>
+</svg>

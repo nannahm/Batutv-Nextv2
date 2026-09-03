@@ -1,0 +1,28 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ====================================================
+    // TEST MODE / DEVELOPMENT RULES
+    // Allows full read and write access for development & seeding
+    // ====================================================
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isSuperAdminEmail() {
+      return isSignedIn() && (
+        request.auth.token.email == 'dzakyinne@gmail.com' ||
+        request.auth.token.email == 'innedzaky@gmail.com' ||
+        request.auth.token.email == 'rioirsyad72@gmail.com'
+      );
+    }
+
+    // Allow full read and write access for all collections in test mode
+    match /{document=**} {
+      allow read, write: if true;
+    }
+  }
+}
+

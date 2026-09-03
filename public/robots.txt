@@ -1,0 +1,18 @@
+User-agent: *
+Allow: /
+
+# Disallow admin CMS control panel routes
+Disallow: /batutv-control/
+Disallow: /batutv-control/*
+
+# Public crawlable paths
+Allow: /
+Allow: /berita/
+Allow: /video/
+Allow: /kategori/
+Allow: /tag/
+Allow: /pages/
+
+# XML Sitemaps
+Sitemap: https://batutv.com/sitemap.xml
+Sitemap: https://batutv.com/sitemap-news.xml
