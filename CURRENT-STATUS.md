@@ -1,9 +1,10 @@
 # Current Migration Status
 
 ## Persistensi Repository (2026-09-03)
-Repository terhubung ke GitHub (nannahm/Batutv-Nextv2) via integrasi native Google AI Studio.
-Commit terverifikasi tersimpan di remote per commit 5e63c4893fd42566327c27ca7daa04b7b91e7db8.
-Sesi berikutnya WAJIB menjalankan `git log -1` dan `git ls-remote origin` di awal untuk
+Repository terhubung ke GitHub (nannahm/Batutv-Nextv2) via Personal Access Token (`GH_TOKEN`).
+Branch aktif: `migration-nextjs-fase1`.
+Commit terverifikasi tersimpan di remote per commit c4f17e2ee49137df42a2950c3b35d7df52b33698.
+Sesi berikutnya WAJIB menjalankan `git log -1` dan `git ls-remote origin migration-nextjs-fase1` di awal untuk
 memastikan kesinambungan sebelum melanjutkan pekerjaan apa pun (lihat CLAUDE-RULES.md
 tambahan soal disiplin sesi).
 
@@ -16,7 +17,7 @@ verifikasi command-by-command untuk setiap klaim progres.
 - **Project**: BatuTV News Portal
 - **Target Framework**: Next.js 16 App Router (Full Stack)
 - **Database**: Firebase Firestore (`batutv-next`)
-- **Last Updated**: 2026-09-02 (Reset & Verifikasi Riil)
+- **Last Updated**: 2026-09-03 (Fase 2 Articles In Progress)
 
 ## Phase Status Summary
 
@@ -24,12 +25,22 @@ verifikasi command-by-command untuk setiap klaim progres.
 |---|---|---|---|
 | **Fase 0** | Handover Infrastructure & Handover Docs | 🟢 Selesai | 100% |
 | **Fase 1** | Fondasi (Next.js 16, App Router Root, ESLint, Firestore SDK, UI) | 🟢 Selesai | 100% |
-| **Fase 2** | Articles (Pilot Domain - Repository, Schemas, Actions, SSR Pages) | ⚪ Siap Dimulai | 0% |
+| **Fase 2** | Articles (Pilot Domain - Repository, Schemas, Actions, SSR Pages, Admin) | 🟡 Sedang Berjalan | 85% |
 | **Fase 3** | Authentication & RBAC (httpOnly Cookies, Middleware Guard) | ⚪ Belum Dimulai | 0% |
 | **Fase 4** | Videos & Media (YouTube Integration, Player, Storage) | ⚪ Belum Dimulai | 0% |
 | **Fase 5** | Taksonomi (Categories, Tags, Archive Routing) | ⚪ Belum Dimulai | 0% |
 | **Fase 6** | Pages, Navigation, Settings, Users (Static Pages, Menus, Sync) | ⚪ Belum Dimulai | 0% |
 | **Fase 7** | Cutover, 23 Audit Scripts, Final Cleanup | ⚪ Belum Dimulai | 0% |
+
+## Progres Terverifikasi Fase 2 (Articles)
+1. **Porting Repository**: `IArticleRepository` & `firestoreArticleRepository` di-export via `src/features/articles/data/index.ts` (Commit `a9df1ce`).
+2. **Skema & Aksi Domain**: Validasi Zod `schemas.ts` dan Server Actions `actions.ts` (create, update, soft delete / trash, permanent delete).
+3. **Routing Publik SSR/SSG**: `src/app/(portal)/berita/[slug]/page.tsx` dengan dynamic `generateMetadata()` dan `generateStaticParams()` untuk 12 artikel publik (Commit `ffff87b`).
+4. **Integrasi Homepage**: Headline dan feed artikel terhubung ke artikel aktif dan navigasi detail.
+5. **Routing Admin & Sitemap**: Rute admin `src/app/(dashboard)/batutv-control/articles/page.tsx` me-render `NewsManagementModule`, dan `src/app/sitemap.ts` men-generate dynamic XML sitemap (Commit `c4f17e2`).
+6. **Verifikasi Build**:
+   - `npx next build --webpack`: `BUILD_EXIT: 0` (21 static pages generated).
+   - `npx tsc --noEmit`: `TSC_EXIT: 0`.
 
 ## Temuan Audit & Resolusi Riil (2026-09-02)
 1. **Status Build Next.js (`npx next build --webpack`)**:

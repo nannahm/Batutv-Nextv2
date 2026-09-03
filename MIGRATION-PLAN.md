@@ -18,13 +18,13 @@
 - [x] Base `middleware.ts` skeleton
 
 ### Fase 2 — Articles (Pilot Domain)
-- [ ] Port `IArticleRepository` & `firestoreArticleRepository` to `features/articles/data/`
-- [ ] Zod schema: `features/articles/schemas/article.schema.ts`
-- [ ] Server Actions: `features/articles/actions/` (create, update, delete, publish, toggle status)
-- [ ] Public Route: `app/(portal)/berita/[slug]/page.tsx` with dynamic `generateMetadata()`
-- [ ] Public Route: `app/(portal)/page.tsx` for Homepage article sections
-- [ ] Admin Route: `app/(dashboard)/batutv-control/articles/` (Article List, Filter, Editor form)
-- [ ] Dynamic Sitemap section: `app/sitemap.ts`
+- [x] Port `IArticleRepository` & `firestoreArticleRepository` to `features/articles/data/`
+- [x] Zod schema: `features/articles/schemas.ts`
+- [x] Server Actions: `features/articles/actions.ts` (create, update, delete, publish, toggle status)
+- [x] Public Route: `app/(portal)/berita/[slug]/page.tsx` with dynamic `generateMetadata()` and `generateStaticParams()`
+- [x] Public Route: `app/page.tsx` / homepage article feed & headline integration
+- [x] Admin Route: `app/(dashboard)/batutv-control/articles/` (Article List, Filter, Editor form)
+- [x] Dynamic Sitemap section: `app/sitemap.ts`
 - [ ] Tests: Unit test repository & e2e flow
 
 ### Fase 3 — Authentication & RBAC
