@@ -6,8 +6,16 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    function isSuperAdminEmail() {
+    // Role-Based Access Control via Custom Claims
+    function hasRole(role) {
+      return isSignedIn() && request.auth.token.role == role;
+    }
+
+    // SuperAdmin check: verified via Custom Claims, with fallback to initial authorized emails
+    // during account custom claims migration window
+    function isSuperAdmin() {
       return isSignedIn() && (
+        request.auth.token.role == 'superadmin' ||
         request.auth.token.email == 'dzakyinne@gmail.com' ||
         request.auth.token.email == 'innedzaky@gmail.com' ||
         request.auth.token.email == 'rioirsyad72@gmail.com'
@@ -18,11 +26,11 @@ service cloud.firestore {
     // ARTICLES COLLECTION
     // Public read-only ONLY for published articles.
     // Public write is strictly forbidden (0 celah write publik).
-    // Admin write is restricted to authenticated superadmins.
+    // Admin write is restricted to authenticated superadmins/editors.
     // ====================================================
     match /articles/{articleId} {
-      allow read: if (resource != null && resource.data.status == 'published') || isSuperAdminEmail();
-      allow write: if isSuperAdminEmail();
+      allow read: if (resource != null && resource.data.status == 'published') || isSuperAdmin() || hasRole('editor');
+      allow write: if isSuperAdmin() || hasRole('editor');
     }
 
     // ====================================================
@@ -30,8 +38,8 @@ service cloud.firestore {
     // Closed to public; only authenticated user themselves or superadmin.
     // ====================================================
     match /users/{userId} {
-      allow read: if isSignedIn() && (request.auth.uid == userId || isSuperAdminEmail());
-      allow write: if isSuperAdminEmail();
+      allow read: if isSignedIn() && (request.auth.uid == userId || isSuperAdmin());
+      allow write: if isSuperAdmin();
     }
 
     // ====================================================
@@ -40,12 +48,12 @@ service cloud.firestore {
     // ====================================================
     match /categories/{categoryId} {
       allow read: if true;
-      allow write: if isSuperAdminEmail();
+      allow write: if isSuperAdmin();
     }
 
     match /tags/{tagId} {
       allow read: if true;
-      allow write: if isSuperAdminEmail();
+      allow write: if isSuperAdmin();
     }
 
     // ====================================================
@@ -53,7 +61,7 @@ service cloud.firestore {
     // Strict default deny for any other collections.
     // ====================================================
     match /{document=**} {
-      allow read, write: if isSuperAdminEmail();
+      allow read, write: if isSuperAdmin();
     }
   }
 }
