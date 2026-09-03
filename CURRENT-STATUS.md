@@ -27,7 +27,7 @@ basis kode yang ada, mengikuti panduan migrasi di `ARCHITECTURE.md` dan `DECISIO
 | **Fase 1** | Fondasi (Next.js 16, App Router Root, ESLint, Firestore SDK, UI) | 🟢 Selesai | 100% |
 | **Fase 2** | Articles (Pilot Domain - Repository, Schemas, Actions, SSR Pages, Admin) | 🟢 Selesai | 100% |
 | **Fase 3** | Authentication & RBAC (httpOnly Cookies, Middleware Guard, Custom Claims) | 🟢 Selesai | 100% |
-| **Fase 4** | Videos & Media (YouTube Integration, Player, Storage) | 🟡 Berjalan (Sub-Task 1) | 25% |
+| **Fase 4** | Videos & Media (YouTube Integration, Player, Storage) | 🟡 Berjalan (Sub-Task 2) | 50% |
 | **Fase 5** | Taksonomi (Categories, Tags, Archive Routing) | ⚪ Belum Dimulai | 0% |
 | **Fase 6** | Pages, Navigation, Settings, Users (Static Pages, Menus, Sync) | ⚪ Belum Dimulai | 0% |
 | **Fase 7** | Cutover, 23 Audit Scripts, Final Cleanup | ⚪ Belum Dimulai | 0% |
@@ -96,6 +96,16 @@ basis kode yang ada, mengikuti panduan migrasi di `ARCHITECTURE.md` dan `DECISIO
    - `src/features/videos/data/adminFirestoreVideoRepository.ts`: Diimplementasikan langsung menggunakan Firebase Admin SDK (`getAdminFirestore()`) dengan arsitektur 2-tier graceful fallback ke `initialAdminVideos`.
    - `src/features/videos/actions.ts`: Disediakan Server Actions (`createVideoAction`, `updateVideoAction`, `deleteVideoAction`, `publishVideoAction`) dengan verifikasi sesi httpOnly cookie `__session` dan penegakan role RBAC (`superadmin`, `editor`, `reporter`).
    - Verifikasi: `npx tsc --noEmit` sukses bersih (`TSC_EXIT: 0`).
+3. **Sub-Task 2 (Komponen Video: Player, Card, Bento Grid, Catalog)**:
+   - Klarifikasi Status Enum Video: Terverifikasi langsung ke live Firestore `batutv-next` (17 dokumen: 8 published, 3 draft, 3 scheduled, 3 trash, 0 archived). Nilai `'draft' | 'scheduled' | 'published' | 'trash'` adalah representasi kanonik sistem soft-delete video.
+   - `src/features/videos/adapters/videoMapper.ts`: Mapper adaptif `toPublicVideoItem` dengan resolusi thumbnail aman (`customThumbnail` vs YouTube HQ), format waktu relatif Indonesia, dan format tanggal lengkap.
+   - `src/features/videos/components/VideoPlayer.tsx`: Pemutar video interaktif dengan **lazy loading click-to-play** (poster thumbnail ber-vignette + durasi + play button overlay; iframe baru dimuat saat user klik play) dan domain privacy-enhanced **`youtube-nocookie.com`**.
+   - `src/features/videos/components/VideoCard.tsx`: Komponen kartu video dengan rasio 16:9, label durasi, badge kategori, hover zoom, jumlah tayangan, nama reporter/presenter, dan timestamp relatif.
+   - `src/features/videos/components/VideoBentoGrid.tsx`: Grid modular (featured hero video + secondary list) untuk etalase video berita portal.
+   - `src/features/videos/components/VideoCatalog.tsx`: Katalog video lengkap dengan live search, filter kategori pills, dan sorting (Terbaru/Terpopuler).
+   - `src/features/videos/components/VideoSkeleton.tsx`: State pemuatan skeleton untuk kartu dan grid video.
+   - Pembersihan Dead Code: Folder rintisan lama `src/features/video/` (singular) yang tidak digunakan telah dibersihkan secara tuntas.
+   - Verifikasi: `npx tsc --noEmit` (0 errors) & `compile_applet` (berhasil).
 
 ## Catatan Kredensial Firebase Admin Service Account (Prasyarat CI/CD & Production Build)
 Untuk pipeline CI/CD produksi mandiri penuh di luar sandbox:

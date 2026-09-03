@@ -87,7 +87,7 @@ export function getYouTubeThumbnailUrl(
  */
 export function getYouTubeEmbedUrl(videoId: string, autoplay = false): string {
   if (!videoId) return '';
-  return `https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1&playsinline=1${autoplay ? '&autoplay=1' : ''}`;
+  return `https://www.youtube-nocookie.com/embed/${videoId}?rel=0&modestbranding=1&playsinline=1${autoplay ? '&autoplay=1' : ''}`;
 }
 
 /**
