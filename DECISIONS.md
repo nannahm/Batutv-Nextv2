@@ -110,4 +110,20 @@
   2. *Admin SDK Server Fetcher*: Memindahkan data fetcher server-side dari Client SDK ke Firebase Admin SDK (D-002).
   3. *Protokol Deploy Infrastruktur*: Penggunaan tool `deploy_firebase` untuk perubahan infrastruktur di luar darurat keamanan wajib memerlukan persetujuan eksplisit dari tim teknis/user.
 
+### D-018: Arsitektur Keamanan Bertingkat: Edge Runtime Middleware Session Guard & Node.js Server Verification (2026-09-03)
+- **Konteks & Kendala**:
+  Next.js Middleware berjalan di Edge Runtime yang secara fundamental tidak mendukung modul Node.js tingkat rendah (`net`, `tls`, `dns`) yang diwajibkan oleh Google gRPC / `firebase-admin/auth` untuk parsing sertifikat kriptografis x509 dan validasi session cookie secara lokal. Mengimpor `firebase-admin` ke dalam `middleware.ts` menyebabkan fatal build error (`A Node.js API is used which is not supported in the Edge Runtime`).
+- **Keputusan Arsitektur**:
+  Menerapkan arsitektur keamanan dua lapis (Defense-in-Depth):
+  1. *Lapisan 1 (Fast Edge Guard di `middleware.ts`)*:
+     - Memeriksa keberadaan cookie sesi httpOnly (`__session`).
+     - Jika cookie tidak ada, request ke `/batutv-control/*` langsung di-short-circuit dan di-redirect ke `/login?redirect=...` dengan overhead ~0ms di edge.
+     - Meneruskan header identifikasi internal (`x-authenticated-admin`).
+  2. *Lapisan 2 (Cryptographic & RBAC Verification di Node.js Server Runtime)*:
+     - Endpoint penukaran token (`/api/auth/session`) berjalan di Node.js Server Runtime, memvalidasi ID token dari Firebase Auth dengan `adminAuth.verifyIdToken()`, dan mencetak cookie httpOnly berdurasi 5 hari via `adminAuth.createSessionCookie()`.
+     - Server Actions (`setUserRoleAction`) dan CMS admin API routes memvalidasi session cookie dan custom claims (`role`) secara kriptografis menggunakan `adminAuth.verifySessionCookie(cookie, true)`.
+- **Konsekuensi**:
+  - `middleware.ts` tetap sangat ringan dan kompatibel penuh dengan edge routing Next.js tanpa kompromi performa.
+  - Keamanan data admin tetap terjamin 100% karena seluruh mutasi data sensitif dan akses API dilindungi oleh verifikasi kriptografis Firebase Admin SDK di server.
+
 

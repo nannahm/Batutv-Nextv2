@@ -17,7 +17,7 @@ basis kode yang ada, mengikuti panduan migrasi di `ARCHITECTURE.md` dan `DECISIO
 - **Project**: BatuTV News Portal
 - **Target Framework**: Next.js 16 App Router (Full Stack)
 - **Database**: Firebase Firestore (`batutv-next`)
-- **Last Updated**: 2026-09-03 (Fase 2 Articles In Progress)
+- **Last Updated**: 2026-09-03 (Fase 3 Authentication & RBAC In Progress)
 
 ## Phase Status Summary
 
@@ -25,12 +25,35 @@ basis kode yang ada, mengikuti panduan migrasi di `ARCHITECTURE.md` dan `DECISIO
 |---|---|---|---|
 | **Fase 0** | Handover Infrastructure & Handover Docs | 🟢 Selesai | 100% |
 | **Fase 1** | Fondasi (Next.js 16, App Router Root, ESLint, Firestore SDK, UI) | 🟢 Selesai | 100% |
-| **Fase 2** | Articles (Pilot Domain - Repository, Schemas, Actions, SSR Pages, Admin) | 🟡 Sedang Berjalan | 90% |
-| **Fase 3** | Authentication & RBAC (httpOnly Cookies, Middleware Guard) | ⚪ Belum Dimulai | 0% |
+| **Fase 2** | Articles (Pilot Domain - Repository, Schemas, Actions, SSR Pages, Admin) | 🟢 Selesai | 100% |
+| **Fase 3** | Authentication & RBAC (httpOnly Cookies, Middleware Guard, Custom Claims) | 🟡 Sedang Berjalan | 85% |
 | **Fase 4** | Videos & Media (YouTube Integration, Player, Storage) | ⚪ Belum Dimulai | 0% |
 | **Fase 5** | Taksonomi (Categories, Tags, Archive Routing) | ⚪ Belum Dimulai | 0% |
 | **Fase 6** | Pages, Navigation, Settings, Users (Static Pages, Menus, Sync) | ⚪ Belum Dimulai | 0% |
 | **Fase 7** | Cutover, 23 Audit Scripts, Final Cleanup | ⚪ Belum Dimulai | 0% |
+
+## Progres Terverifikasi Fase 3 (Authentication & RBAC)
+1. **Sub-Task 1 (Setup Firebase Admin SDK Server-Only)**:
+   - File `src/lib/firebaseAdmin.ts` berhasil diinisialisasi sebagai singleton server-only (`server-only` guarded).
+   - Mendukung credential dari `FIREBASE_SERVICE_ACCOUNT_KEY` (JSON string env) dengan fallback ke Application Default Credentials / Project ID.
+   - Variabel terdokumentasi rapi di `.env.example`.
+2. **Sub-Task 2 (Migrasi liveFirestoreService ke Admin SDK)**:
+   - `src/features/articles/data/liveFirestoreService.ts` dialihkan ke `getAdminFirestore()` di server context.
+   - Filter query `where('status', '==', 'published')` dipertahankan mutlak untuk keamanan status draft.
+   - Multi-tier resilience: Admin SDK -> Client SDK public-read fallback -> Seed cache data dengan warning log.
+3. **Sub-Task 3 (Custom Claims RBAC & Server Action)**:
+   - Skema Zod hierarki role: `superadmin` (3) > `editor` (2) > `reporter` (1) di `src/features/auth/schemas.ts`.
+   - Server Action `setUserRoleAction` di `src/features/auth/serverActions.ts` menggunakan `getAdminAuth().setCustomUserClaims()`.
+   - *Status Eksekusi*: Helper siap, siap dijalankan pada 5 akun staf begitu persetujuan user diberikan.
+4. **Sub-Task 4 (Update firestore.rules ke Custom Claims)**:
+   - Aturan `firestore.rules` diperbarui mendukung fungsi `hasRole(role)` dan `isSuperAdmin()` berbasis claims `request.auth.token.role`.
+   - Fallback email hardcoded dipertahankan selama masa transisi agar staf tidak terkunci.
+   - *Catatan Kritis*: Draft rules telah di-commit ke Git tapi **TIDAK dideploy** ke production Firestore tanpa konfirmasi eksplisit user (Protokol Bagian B).
+5. **Sub-Task 5 (Session Cookie Flow)**:
+   - Endpoint `POST` & `DELETE` di `src/app/api/auth/session/route.ts` untuk pertukaran ID token Firebase menjadi httpOnly cookie `__session` (durasi 5 hari, `sameSite: 'lax'`).
+   - `LoginPage.tsx` otomatis mengontak endpoint sesi setelah berhasil login di client.
+6. **Sub-Task 6 (Middleware Logic Guard)**:
+   - `src/middleware.ts` memproteksi rute `/batutv-control/*` di Edge Runtime dengan memeriksa cookie `__session` (D-018). Request tanpa cookie otomatis dialihkan ke `/login?redirect=...`.
 
 ## Progres Terverifikasi Fase 2 (Articles)
 1. **Porting Repository**: `IArticleRepository` & `firestoreArticleRepository` di-export via `src/features/articles/data/index.ts` (Commit `a9df1ce`).
