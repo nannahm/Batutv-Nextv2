@@ -68,6 +68,7 @@ Untuk pipeline CI/CD produksi mandiri penuh di luar sandbox:
 
 ## Status Keamanan & Lingkungan Database Firestore (Audit 2026-09-03)
 - **Status Database**: Project `batutv-next` (`(default)`) adalah **database resmi / riil BatuTV** (berisi data pengguna autentik seperti `dzakyinne@gmail.com`, dewan redaksi, dan artikel berita aktual).
+- **Catatan Insiden & Audit**: Terdokumentasi lengkap pada keputusan arsitektur **`D-017` di `DECISIONS.md`**.
 - **Audit firestore.rules**:
   - *Temuan Sebelumnya*: Rule lama berada dalam test mode terbuka (`match /{document=**} { allow read, write: if true; }`).
   - *Resolusi Terverifikasi*: Telah diperbaiki dan dideploy via `deploy_firebase` per 2026-09-03.
@@ -75,10 +76,11 @@ Untuk pipeline CI/CD produksi mandiri penuh di luar sandbox:
     - Koleksi `articles`: **Public read-only HANYA untuk status `published`** (`allow read: if resource.data.status == 'published'`). Draft dan scheduled news tertutup dari publik.
     - Celah Public Write: **DITUTUP TOTAL** (`allow write: if isSuperAdminEmail()`). Tidak ada celah write publik tanpa autentikasi superadmin.
     - Koleksi `users`: Ditutup dari publik (`allow read: if isSignedIn() && (request.auth.uid == userId || isSuperAdminEmail())`).
-- **Kebijakan Testing Sandbox**:
+- **Kebijakan Testing Sandbox & Protokol Deploy**:
   - Karena terhubung ke live database, operasi pengujian di sandbox dilarang keras melakukan write destruktif.
   - Read query saat build dibatasi ketat (`limit(30)` untuk SSG dan `limit(1)` untuk detail).
   - Evaluasi penggunaan Firestore Emulator / static mock data layer untuk CI/CD pipeline luar sebelum Fase 7.
+  - **Protokol `deploy_firebase`**: Di luar hotfix darurat keamanan (seperti penutupan celah terbuka), segala deploy rules dan konfigurasi cloud wajib melalui konfirmasi dan persetujuan eksplisit dari tim teknis.
 
 ## Temuan Audit & Resolusi Riil (2026-09-02)
 1. **Status Build Next.js (`npx next build --webpack`)**:

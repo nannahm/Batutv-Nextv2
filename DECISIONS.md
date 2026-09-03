@@ -91,3 +91,23 @@
 - **Alternatif dipertimbangkan**: Menggunakan nama `news`.
 - **Konsekuensi**: Direktori `src/features/news/` direname menjadi `src/features/articles/` dan seluruh referensi di PROJECT.md, ARCHITECTURE.md, dan MIGRATION-PLAN.md diselaraskan menggunakan nama `articles`.
 
+### D-017: Insiden Keamanan Firestore Rules Public Write & Remediasi Arsitektur (2026-09-03)
+- **Apa yang Ditemukan**: Pada saat audit live fetcher Fase 2 (2026-09-03), ditemukan bahwa file `firestore.rules` di database production `batutv-next` mengandung aturan catch-all test mode yang tertinggal dari seeding awal: `match /{document=**} { allow read, write: if true; }`. Celah ini membuka potensi operasi read/write/delete tanpa autentikasi terhadap seluruh koleksi production bagi siapa pun yang mengetahui API config Firebase publik.
+- **Dampak Potensial**: Risiko integritas data berita riil BatuTV (defacement, penghapusan), kebocoran draft artikel yang belum terbit, serta pembacaan privat dokumen staf di koleksi `users`.
+- **Tindakan Perbaikan Segera**:
+  1. *Hardening Rules*: Menutup total celah write publik.
+     - `match /articles/{articleId}`: Read publik HANYA untuk artikel berstatus `published` (`resource.data.status == 'published'`). Seluruh operasi write wajib superadmin terautentikasi.
+     - `match /users/{userId}`: Tertutup penuh dari publik. Hanya user terautentikasi untuk datanya sendiri atau superadmin.
+     - `match /categories/{id}` & `tags`: Read publik, write superadmin.
+     - `match /{document=**}`: Default deny untuk publik.
+  2. *Deployment Hotfix*: Rules yang telah diperketat langsung dideploy ke project `batutv-next`.
+- **Hasil Audit Integritas Pasca-Insiden**:
+  1. *Audit Koleksi `users`*: Pengujian query tanpa autentikasi terbukti ditolak dengan error `permission-denied`.
+  2. *Audit Koleksi `articles`*: Terverifikasi 12 dokumen artikel published bersih dari defacement, spam (casino/judi/porn/crypto), maupun script injection (`<script>`).
+  3. *Uji Eksploitasi Write*: Simulasi penambahan dokumen baru tanpa autentikasi ke koleksi `articles` dan `categories` terbukti diblokir 100% dengan kode `PERMISSION_DENIED`.
+- **Tindak Lanjut Arsitektur (Fase 3)**:
+  1. *Custom Claims RBAC*: Mengganti verifikasi email hardcoded (`request.auth.token.email == ...`) dengan Firebase Custom Claims (`request.auth.token.role == 'superadmin'`) melalui Firebase Admin SDK.
+  2. *Admin SDK Server Fetcher*: Memindahkan data fetcher server-side dari Client SDK ke Firebase Admin SDK (D-002).
+  3. *Protokol Deploy Infrastruktur*: Penggunaan tool `deploy_firebase` untuk perubahan infrastruktur di luar darurat keamanan wajib memerlukan persetujuan eksplisit dari tim teknis/user.
+
+
