@@ -27,7 +27,7 @@ basis kode yang ada, mengikuti panduan migrasi di `ARCHITECTURE.md` dan `DECISIO
 | **Fase 1** | Fondasi (Next.js 16, App Router Root, ESLint, Firestore SDK, UI) | 🟢 Selesai | 100% |
 | **Fase 2** | Articles (Pilot Domain - Repository, Schemas, Actions, SSR Pages, Admin) | 🟢 Selesai | 100% |
 | **Fase 3** | Authentication & RBAC (httpOnly Cookies, Middleware Guard, Custom Claims) | 🟢 Selesai | 100% |
-| **Fase 4** | Videos & Media (YouTube Integration, Player, Storage) | ⚪ Siap Dimulai | 0% |
+| **Fase 4** | Videos & Media (YouTube Integration, Player, Storage) | 🟡 Berjalan (Sub-Task 1) | 25% |
 | **Fase 5** | Taksonomi (Categories, Tags, Archive Routing) | ⚪ Belum Dimulai | 0% |
 | **Fase 6** | Pages, Navigation, Settings, Users (Static Pages, Menus, Sync) | ⚪ Belum Dimulai | 0% |
 | **Fase 7** | Cutover, 23 Audit Scripts, Final Cleanup | ⚪ Belum Dimulai | 0% |
@@ -86,6 +86,17 @@ basis kode yang ada, mengikuti panduan migrasi di `ARCHITECTURE.md` dan `DECISIO
    - `npx next build --webpack`: `BUILD_EXIT: 0` (21 static pages generated).
    - `npx tsc --noEmit`: `TSC_EXIT: 0`.
 
+## Progres Terverifikasi Fase 4 (Videos & Media)
+1. **Sub-Task 0 (Audit Videos & Storage)**:
+   - Audit menyeluruh membuktikan codebase legacy tidak menggunakan Firebase Storage SDK (baik Client maupun Admin).
+   - Media dan thumbnail disimpan sebagai URL eksternal (Unsplash/CDN) atau DataURL WebP base64 via canvas client.
+   - D-021 didokumentasikan di `DECISIONS.md` untuk mem-porting pola URL/DataURL tanpa membangun infrastruktur Storage SDK baru di Fase 4.
+2. **Sub-Task 1 (Repository & Schema Domain Video)**:
+   - `src/features/videos/schemas.ts`: Dibuat dengan validasi Zod (`adminVideoSchema`, `videoStatusSchema`, `videoFilterSchema`, `extractYouTubeId`) yang selaras 100% dengan `AdminVideo` dan `VideoStatus` (`'draft' | 'scheduled' | 'published' | 'trash'`).
+   - `src/features/videos/data/adminFirestoreVideoRepository.ts`: Diimplementasikan langsung menggunakan Firebase Admin SDK (`getAdminFirestore()`) dengan arsitektur 2-tier graceful fallback ke `initialAdminVideos`.
+   - `src/features/videos/actions.ts`: Disediakan Server Actions (`createVideoAction`, `updateVideoAction`, `deleteVideoAction`, `publishVideoAction`) dengan verifikasi sesi httpOnly cookie `__session` dan penegakan role RBAC (`superadmin`, `editor`, `reporter`).
+   - Verifikasi: `npx tsc --noEmit` sukses bersih (`TSC_EXIT: 0`).
+
 ## Catatan Kredensial Firebase Admin Service Account (Prasyarat CI/CD & Production Build)
 Untuk pipeline CI/CD produksi mandiri penuh di luar sandbox:
 - **Kebutuhan**: Environment variable `FIREBASE_SERVICE_ACCOUNT_KEY` (JSON private key) atau kredensial ADC GCP (`GOOGLE_APPLICATION_CREDENTIALS`) diperlukan agar Next.js Server Components dan Node.js build runner dapat mengautentikasi Firestore live secara langsung tanpa fallback seed.
@@ -95,17 +106,20 @@ Untuk pipeline CI/CD produksi mandiri penuh di luar sandbox:
 1. Unit testing suite untuk mapper, Zod schema, dan repository.
 2. Pengintegrasian/pemberdayaan `ArticleBentoGrid` & `ArticleSkeleton` di rute portal publik.
 
-## Technical Debt Teridentifikasi (Fase 2)
-1. **Heuristik Deteksi isBreaking & Region**:
+## Technical Debt Teridentifikasi (Fase 2 & 4)
+1. **Penyimpanan Gambar sebagai DataURL Base64 di Firestore (Fase 4)**:
+   - *Kondisi*: Dokumen pada koleksi `/media` berpotensi menyimpan string base64 (`data:image/webp;base64,...`) langsung di field `url` bila diunggah via canvas client.
+   - *Risiko*: Batas ukuran dokumen Firestore adalah 1MB per dokumen. Base64 menambah overhead ukuran (~33%), dan setiap operasi pembacaan dokumen mentransfer seluruh string base64 sehingga membebani bandwidth/read cost dibanding file URL di CDN/Storage.
+   - *Rencana Mitigasi*: Pola existing dipertahankan pada Fase 4 (D-021: port pola existing, bukan rewrite). Migrasi ke Firebase Storage SDK asli dipertimbangkan di fase optimisasi mendatang (di luar 7 fase migrasi utama, atau masuk Fase 7 jika ada sisa waktu).
+
+2. **Heuristik Deteksi isBreaking & Region (Fase 2)**:
    - Logika penentuan `isBreaking` dan `region` di `articleMapper.ts` saat ini menggunakan string matching heuristik pada teks tag (`breaking`, `utama`, nama kota).
    - Pendekatan ini rentan terhadap variasi penulisan atau typo editor.
    - **Rencana Mitigasi**: Pada Fase 6/7, ganti dengan field boolean eksplisit (`isBreaking: boolean`, `region: RegionEnum`) terstruktur di schema Firestore dan form admin CMS.
 
-2. **Migrasi Server Fetcher ke Firebase Admin SDK (D-002 Compliance)**:
-   - *Kondisi*: `generateStaticParams()` dan `generateMetadata()` di `app/(portal)/berita/[slug]/page.tsx` saat ini masih menggunakan Web Client SDK (`firebase/firestore`).
-   - *Penyebab*: Client SDK digunakan sebagai transisi cepat porting Fase 2 sebelum infrastruktur credentials Admin SDK dipasang.
-   - *Alasan Ditunda ke Fase 3*: Inisialisasi Firebase Admin SDK (`firebase-admin`) dijadwalkan secara utuh pada **Fase 3 (Authentication & RBAC)** untuk menangani token/session verification cookie httpOnly dan middleware. Memindahkan fetcher artikel sekarang sebelum arsitektur `firebase-admin` Fase 3 berdiri akan menyebabkan inisialisasi ganda dan fragmentasi arsitektur.
-   - *Rencana Mitigasi (Fase 3)*: Begitu modul server Admin SDK (`src/lib/firebaseAdmin.ts`) selesai di Fase 3, `liveFirestoreService.ts` akan dialihkan menggunakan Admin SDK untuk semua server-side runtime Next.js.
+3. **Migrasi Server Fetcher ke Firebase Admin SDK (D-002 Compliance - Selesai di Fase 3)**:
+   - Selesai termigrasi ke arsitektur 2-tier murni (Admin SDK -> Static Seed Cache) pada Fase 3.
+
 
 ## Status Keamanan & Lingkungan Database Firestore (Audit 2026-09-03)
 - **Status Database**: Project `batutv-next` (`(default)`) adalah **database resmi / riil BatuTV** (berisi data pengguna autentik seperti `dzakyinne@gmail.com`, dewan redaksi, dan artikel berita aktual).

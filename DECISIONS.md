@@ -164,5 +164,15 @@
   - Jejak audit dan integritas data historis terlindungi penuh (bebas data loss).
   - Skema data Firestore bersih, seragam, dan selaras dengan `firestore.rules` live.
 
+### D-021: Pola Penyimpanan Media & Thumbnail (Porting Pola URL/DataURL Tanpa Storage SDK)
+- **Konteks**:
+  Audit Fase 4 Sub-Task 0 mengonfirmasi bahwa codebase legacy tidak menggunakan Firebase Storage SDK (baik Client maupun Admin). Media disimpan sebagai URL eksternal (Unsplash/CDN) atau DataURL WebP base64 yang dihasilkan oleh canvas client (`optimizeUploadedImage`).
+- **Keputusan**:
+  Mempertahankan dan mem-porting pola URL/DataURL yang sudah berjalan pada repository media dan skema validasi Zod tanpa membangun infrastruktur Firebase Storage SDK baru di Fase 4. Prinsip: "Port pola existing, bukan rewrite; migrasi ke Firebase Storage SDK asli dipertimbangkan di luar scope 7 fase migrasi utama (atau masuk Fase 7 jika ada sisa waktu)".
+- **Konsekuensi**:
+  - Implementasi Fase 4 tetap ramping, aman, dan tidak menambah kompleksitas infrastruktur/rules bucket baru.
+  - DataURL base64 langsung di Firestore dicatat sebagai technical debt terkait batas 1MB dokumen Firestore.
+
+
 
 
