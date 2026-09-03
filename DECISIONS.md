@@ -141,4 +141,28 @@
   - Bundle server bersih dari import Client SDK Firestore (`firebase/firestore`).
   - Perilaku data fetching menjadi predictable, aman, dan mematuhi D-002 secara mutlak.
 
+### D-020: Pola Migrasi Dokumen User Non-Destruktif & Pemetaan Kanonik Berbasis Auth UID (2026-09-03)
+- **Konteks & Masalah**:
+  Data pengguna awal disimpan dalam dokumen seed Firestore dengan Document ID warisan format `usr-XXX` (`usr-000` s/d `usr-009`). Sementara itu, aturan keamanan `firestore.rules` dan arsitektur otentikasi Firebase modern mengandalkan `request.auth.uid == userId` di mana Document ID harus persis sama dengan Firebase Auth UID (`users/{uid}`).
+  Menghapus dokumen lama `usr-XXX` secara langsung akan memusnahkan jejak audit (audit trail) dan metadata historis penting, sedangkan membuat dokumen baru tanpa koordinasi berisiko menimbulkan data duplikat yang membingungkan.
+- **Keputusan**:
+  1. Menerapkan pola migrasi non-destruktif:
+     - Dokumen warisan `users/usr-XXX` TIDAK dihapus, melainkan ditandai secara permanen dengan metadata:
+       ```json
+       {
+         "isMigrated": true,
+         "migrationStatus": "migrated",
+         "canonicalUid": "<Firebase_Auth_UID>",
+         "migratedAt": "<ISO_Timestamp>",
+         "auditNote": "Legacy seed record migrated to canonical auth UID document users/<Firebase_Auth_UID>"
+       }
+       ```
+     - Dokumen kanonik baru dibuat pada path `users/<Firebase_Auth_UID>` dengan menyertakan atribut role kanonik (`superadmin`, `editor`, atau `reporter`) dan profil terverifikasi.
+  2. Penegakan Prinsip Zero-Assumption untuk Akun Seed:
+     - Akun staf yang baru berupa dokumen seed Firestore dan belum memiliki akun di Firebase Authentication tidak boleh diasumsikan UID-nya dan tidak boleh dibuatkan akun Auth tanpa konfirmasi eksplisit user.
+- **Konsekuensi**:
+  - Jejak audit dan integritas data historis terlindungi penuh (bebas data loss).
+  - Skema data Firestore bersih, seragam, dan selaras dengan `firestore.rules` live.
+
+
 

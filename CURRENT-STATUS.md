@@ -17,7 +17,7 @@ basis kode yang ada, mengikuti panduan migrasi di `ARCHITECTURE.md` dan `DECISIO
 - **Project**: BatuTV News Portal
 - **Target Framework**: Next.js 16 App Router (Full Stack)
 - **Database**: Firebase Firestore (`batutv-next`)
-- **Last Updated**: 2026-09-03 (Fase 3 Authentication & RBAC In Progress)
+- **Last Updated**: 2026-09-03 (Fase 3 Authentication & RBAC Completed)
 
 ## Phase Status Summary
 
@@ -26,8 +26,8 @@ basis kode yang ada, mengikuti panduan migrasi di `ARCHITECTURE.md` dan `DECISIO
 | **Fase 0** | Handover Infrastructure & Handover Docs | 🟢 Selesai | 100% |
 | **Fase 1** | Fondasi (Next.js 16, App Router Root, ESLint, Firestore SDK, UI) | 🟢 Selesai | 100% |
 | **Fase 2** | Articles (Pilot Domain - Repository, Schemas, Actions, SSR Pages, Admin) | 🟢 Selesai | 100% |
-| **Fase 3** | Authentication & RBAC (httpOnly Cookies, Middleware Guard, Custom Claims) | 🟡 Sedang Berjalan | 85% |
-| **Fase 4** | Videos & Media (YouTube Integration, Player, Storage) | ⚪ Belum Dimulai | 0% |
+| **Fase 3** | Authentication & RBAC (httpOnly Cookies, Middleware Guard, Custom Claims) | 🟢 Selesai | 100% |
+| **Fase 4** | Videos & Media (YouTube Integration, Player, Storage) | ⚪ Siap Dimulai | 0% |
 | **Fase 5** | Taksonomi (Categories, Tags, Archive Routing) | ⚪ Belum Dimulai | 0% |
 | **Fase 6** | Pages, Navigation, Settings, Users (Static Pages, Menus, Sync) | ⚪ Belum Dimulai | 0% |
 | **Fase 7** | Cutover, 23 Audit Scripts, Final Cleanup | ⚪ Belum Dimulai | 0% |
@@ -44,17 +44,22 @@ basis kode yang ada, mengikuti panduan migrasi di `ARCHITECTURE.md` dan `DECISIO
 3. **Sub-Task 3 (Custom Claims RBAC & Server Action)**:
    - Skema Zod hierarki role: `superadmin` (3) > `editor` (2) > `reporter` (1) di `src/features/auth/schemas.ts`.
    - Server Action `setUserRoleAction` di `src/features/auth/serverActions.ts` menggunakan `getAdminAuth().setCustomUserClaims()`.
-   - *Status Eksekusi*: Helper siap, siap dijalankan dengan strategi uji coba 1 akun terlebih dahulu (`dzakyinne@gmail.com`) setelah approval.
-4. **Sub-Task 4 (Update firestore.rules ke Custom Claims)**:
+   - Pola migrasi non-destruktif (D-020): dokumen legacy ditandai `isMigrated: true` dan `migrationStatus: 'migrated'`, dokumen kanonik terpetakan ke `users/{uid}`.
+4. **Sub-Task 4 (Update & Deployment firestore.rules ke Custom Claims)**:
    - Aturan `firestore.rules` diperbarui mendukung fungsi `hasRole(role)` dan `isSuperAdmin()` berbasis claims `request.auth.token.role`.
-   - Fallback email hardcoded dipertahankan selama masa transisi agar staf tidak terkunci.
-   - *Catatan Kritis*: Draft rules telah di-commit ke Git tapi **TIDAK dideploy** ke production Firestore tanpa konfirmasi eksplisit user (Protokol Bagian B).
+   - Aturan telah dideploy via `deploy_firebase` dan diuji secara live:
+     - Public Read `/categories`: Diizinkan (`allow read: if true;`).
+     - Public Write `/articles`: Ditolak mutlak (`7 PERMISSION_DENIED`).
+     - Public Read `/users`: Ditolak mutlak (`7 PERMISSION_DENIED`).
 5. **Sub-Task 5 (Session Cookie Flow)**:
    - Endpoint `POST` & `DELETE` di `src/app/api/auth/session/route.ts` untuk pertukaran ID token Firebase menjadi httpOnly cookie `__session` (durasi 5 hari, `sameSite: 'lax'`).
    - `LoginPage.tsx` otomatis mengontak endpoint sesi setelah berhasil login di client.
 6. **Sub-Task 6 (Arsitektur Keamanan Bertingkat: Edge Guard & Server Component Verification)**:
    - `src/middleware.ts` memproteksi rute `/batutv-control/*` di Edge Runtime dengan memeriksa keberadaan cookie `__session` (fast short-circuit).
    - Root Server Component Layout `src/app/(dashboard)/batutv-control/layout.tsx` memverifikasi cookie secara kriptografis menggunakan `adminAuth.verifySessionCookie(sessionCookie, true)` SEBELUM komponen anak dan UI redaksi dirender. Menutup 100% celah render konten untuk cookie palsu/kadaluarsa (D-018).
+7. **Rollout Custom Claims & Audit Akun Staf (Langkah 1 - 4)**:
+   - Akun Pengembang / Super Admin (`dzakyinne@gmail.com`): Terdaftar di Firebase Auth (UID `40uxsmjnYYdv8Lov6V3qh83JZI02`), custom claims `{ role: 'superadmin' }` terverifikasi aktif, dokumen kanonik `users/40uxsmjnYYdv8Lov6V3qh83JZI02` aktif, dokumen warisan `users/usr-000` bermigrasi (`migrationStatus: 'migrated'`).
+   - 4 Akun Staf Redaksi (`ahmad.fauzi@batutv.id`, `budi.santoso@batutv.id`, `sinta.rahma@batutv.id`, `dimas.pratama@batutv.id`): Diaudit via Firebase Admin Auth `getUserByEmail()`. Ditemukan berstatus *seed-only* (belum terdaftar di Firebase Authentication Console / belum pernah login). Sesuai protokol, sistem mempertahankan status aman tanpa mengasumsikan UID palsu atau membuat akun tanpa persetujuan manual. Skema pemetaan role kanonik (Opsi 1: superadmin/editor/editor/reporter) telah terkunci dan siap disematkan begitu akun didaftarkan.
 
 ## Progres Terverifikasi Fase 2 (Articles)
 1. **Porting Repository**: `IArticleRepository` & `firestoreArticleRepository` di-export via `src/features/articles/data/index.ts` (Commit `a9df1ce`).
