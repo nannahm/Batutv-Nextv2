@@ -57,6 +57,45 @@ service cloud.firestore {
     }
 
     // ====================================================
+    // PORTAL CONTENT & CONFIGURATIONS
+    // Public read allowed for portal presentation, write strictly restricted to editorial staff.
+    // ====================================================
+    match /site_settings/{settingId} {
+      allow read: if true;
+      allow write: if isSuperAdmin();
+    }
+
+    match /navigation/{navId} {
+      allow read: if true;
+      allow write: if isSuperAdmin();
+    }
+
+    match /footer/{footerId} {
+      allow read: if true;
+      allow write: if isSuperAdmin();
+    }
+
+    match /pages/{pageId} {
+      allow read: if true;
+      allow write: if isSuperAdmin() || hasRole('editor');
+    }
+
+    match /authors/{authorId} {
+      allow read: if true;
+      allow write: if isSuperAdmin() || hasRole('editor');
+    }
+
+    match /videos/{videoId} {
+      allow read: if true;
+      allow write: if isSuperAdmin() || hasRole('editor');
+    }
+
+    match /system_settings/{settingId} {
+      allow read: if true;
+      allow write: if isSuperAdmin();
+    }
+
+    // ====================================================
     // DEFAULT CATCH-ALL
     // Strict default deny for any other collections.
     // ====================================================
