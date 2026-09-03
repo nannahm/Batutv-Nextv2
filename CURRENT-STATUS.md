@@ -54,6 +54,12 @@ Untuk pipeline CI/CD produksi mandiri penuh di luar sandbox:
 1. Unit testing suite untuk mapper, Zod schema, dan repository.
 2. Pengintegrasian/pemberdayaan `ArticleBentoGrid` & `ArticleSkeleton` di rute portal publik.
 
+## Technical Debt Teridentifikasi (Fase 2)
+1. **Heuristik Deteksi isBreaking & Region**:
+   - Logika penentuan `isBreaking` dan `region` di `articleMapper.ts` saat ini menggunakan string matching heuristik pada teks tag (`breaking`, `utama`, nama kota).
+   - Pendekatan ini rentan terhadap variasi penulisan atau typo editor.
+   - **Rencana Mitigasi**: Pada Fase 6/7, ganti dengan field boolean eksplisit (`isBreaking: boolean`, `region: RegionEnum`) terstruktur di schema Firestore dan form admin CMS.
+
 ## Temuan Audit & Resolusi Riil (2026-09-02)
 1. **Status Build Next.js (`npx next build --webpack`)**:
    - **Hasil**: Lolos bersih `EXIT: 0`.
