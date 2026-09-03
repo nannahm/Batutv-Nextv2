@@ -30,8 +30,8 @@ export function middleware(request: NextRequest) {
   if (pathname.startsWith('/batutv-control')) {
     const sessionCookie = request.cookies.get(SESSION_COOKIE_NAME)?.value;
 
-    // Jika cookie session tidak ada, redirect ke login
-    if (!sessionCookie) {
+    // Jika cookie session tidak ada atau bukan format token JWT valid (3 segmen), redirect ke login
+    if (!sessionCookie || sessionCookie.split('.').length !== 3 || sessionCookie.length < 50) {
       const loginUrl = new URL('/login', request.url);
       loginUrl.searchParams.set('redirect', pathname);
       return NextResponse.redirect(loginUrl);

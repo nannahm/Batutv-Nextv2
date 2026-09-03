@@ -32,16 +32,19 @@ export default async function DashboardControlLayout({
     redirect('/login?redirect=/batutv-control');
   }
 
+  let isAuthenticated = false;
   try {
     const adminAuth = getAdminAuth();
     // Memeriksa keabsahan tanda tangan JWT session cookie & status revocation
     const decodedToken = await adminAuth.verifySessionCookie(sessionCookie, true);
-
-    if (!decodedToken || !decodedToken.uid) {
-      redirect('/login?redirect=/batutv-control');
+    if (decodedToken && decodedToken.uid) {
+      isAuthenticated = true;
     }
-  } catch (error) {
-    // Cookie palsu, telah kedaluwarsa, atau di-revoke
+  } catch {
+    isAuthenticated = false;
+  }
+
+  if (!isAuthenticated) {
     redirect('/login?redirect=/batutv-control');
   }
 
