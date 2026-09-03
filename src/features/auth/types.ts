@@ -1,3 +1,5 @@
+export const SESSION_COOKIE_NAME = '__session';
+
 export interface AdminUser {
   id: string;
   name: string;

@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminAuth } from '@/src/lib/firebaseAdmin';
+import { SESSION_COOKIE_NAME } from '@/src/features/auth/types';
 
 // Durasi session cookie: 5 hari (dalam milidetik)
 const EXPIRES_IN = 60 * 60 * 24 * 5 * 1000;
-export const SESSION_COOKIE_NAME = '__session';
 
 export async function POST(req: NextRequest) {
   try {
