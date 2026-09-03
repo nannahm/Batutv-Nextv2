@@ -59,7 +59,19 @@ basis kode yang ada, mengikuti panduan migrasi di `ARCHITECTURE.md` dan `DECISIO
    - Root Server Component Layout `src/app/(dashboard)/batutv-control/layout.tsx` memverifikasi cookie secara kriptografis menggunakan `adminAuth.verifySessionCookie(sessionCookie, true)` SEBELUM komponen anak dan UI redaksi dirender. Menutup 100% celah render konten untuk cookie palsu/kadaluarsa (D-018).
 7. **Rollout Custom Claims & Audit Akun Staf (Langkah 1 - 4)**:
    - Akun Pengembang / Super Admin (`dzakyinne@gmail.com`): Terdaftar di Firebase Auth (UID `40uxsmjnYYdv8Lov6V3qh83JZI02`), custom claims `{ role: 'superadmin' }` terverifikasi aktif, dokumen kanonik `users/40uxsmjnYYdv8Lov6V3qh83JZI02` aktif, dokumen warisan `users/usr-000` bermigrasi (`migrationStatus: 'migrated'`).
-   - 4 Akun Staf Redaksi (`ahmad.fauzi@batutv.id`, `budi.santoso@batutv.id`, `sinta.rahma@batutv.id`, `dimas.pratama@batutv.id`): Diaudit via Firebase Admin Auth `getUserByEmail()`. Ditemukan berstatus *seed-only* (belum terdaftar di Firebase Authentication Console / belum pernah login). Sesuai protokol, sistem mempertahankan status aman tanpa mengasumsikan UID palsu atau membuat akun tanpa persetujuan manual. Skema pemetaan role kanonik (Opsi 1: superadmin/editor/editor/reporter) telah terkunci dan siap disematkan begitu akun didaftarkan.
+   - 4 Akun Staf Redaksi Utama (`ahmad.fauzi@batutv.id`, `budi.santoso@batutv.id`, `sinta.rahma@batutv.id`, `dimas.pratama@batutv.id`): Diaudit via Firebase Admin Auth `getUserByEmail()`. Ditemukan berstatus *seed-only* (belum terdaftar di Firebase Authentication Console / belum pernah login). Sesuai protokol, sistem mempertahankan status aman tanpa mengasumsikan UID palsu atau membuat akun tanpa persetujuan manual. Skema pemetaan role kanonik (Opsi 1: superadmin/editor/editor/reporter) telah terkunci dan siap disematkan begitu akun didaftarkan.
+   - **Klarifikasi Dokumen Warisan `usr-005` s/d `usr-009`**:
+     - Dokumen `usr-005` (`rina.wulandari@batutv.id` - redaksi), `usr-006` (`dewi.anggraini@batutv.id` - editor), `usr-007` (`nadia.putri@batutv.id` - kontributor), `usr-008` (`arif.setiawan@batutv.id` - kontributor), `usr-009` (`fajar.hidayat@batutv.id` - reporter) adalah data seed dummy dari portal lama.
+     - Status: Saat ini berstatus *unmigrated seed records* (`migrationStatus: 'none'`, `isMigrated: false`).
+     - Perlindungan Integritas: Mengikuti D-020, dokumen ini TIDAK dihapus demi menjaga keutuhan relasi artikel historis yang mereferensikan `authorId` mereka. Migrasi atau pembersihan final akan ditangani secara terstruktur pada Fase 6 (Users & Settings).
+   - **Pencatatan Gap Onboarding Staf Redaksi (SOP Transisi)**:
+     - *Identifikasi Gap*: Terdapat celah operasional di mana akun yang dibuat di Firebase Auth Console belum otomatis memiliki custom claims atau dokumen profil kanonik di Firestore.
+     - *Prosedur Standar Onboarding (SOP)*:
+       1. Pendaftaran Akun: Super Admin mendaftarkan email staf di Firebase Authentication Console.
+       2. Role Assignment: Server Action `setUserRoleAction(uid, role)` dieksekusi dengan role kanonik (`superadmin`, `editor`, atau `reporter`) untuk menyematkan custom claims.
+       3. Dokumen Kanonik: Sistem membuat dokumen profil pada `/users/{uid}`.
+       4. Flag Dokumen Warisan: Jika akun tersebut memiliki dokumen seed lama (`usr-XXX`), dokumen lama diperbarui dengan flag non-destruktif `{ isMigrated: true, migrationStatus: 'migrated', canonicalUid: uid }`.
+     - *Rencana Otomasi*: Alur manual ini akan dibangun menjadi antarmuka UI terintegrasi pada modul User Management di Fase 6.
 
 ## Progres Terverifikasi Fase 2 (Articles)
 1. **Porting Repository**: `IArticleRepository` & `firestoreArticleRepository` di-export via `src/features/articles/data/index.ts` (Commit `a9df1ce`).
