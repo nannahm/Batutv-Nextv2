@@ -1,5 +1,12 @@
 # Current Migration Status
 
+## Persistensi Repository (2026-09-03)
+Repository terhubung ke GitHub (nannahm/Batutv-Nextv2) via integrasi native Google AI Studio.
+Commit terverifikasi tersimpan di remote per commit 5e63c4893fd42566327c27ca7daa04b7b91e7db8.
+Sesi berikutnya WAJIB menjalankan `git log -1` dan `git ls-remote origin` di awal untuk
+memastikan kesinambungan sebelum melanjutkan pekerjaan apa pun (lihat CLAUDE-RULES.md
+tambahan soal disiplin sesi).
+
 ## Catatan Reset (2026-09-02)
 Riwayat git sebelumnya (commit d5d1204/614b844 dan progres Fase 1 yang pernah dilaporkan) tidak ditemukan
 di repository ini maupun di remote GitHub manapun. Proses migrasi dimulai ulang dari checkpoint baru dengan
