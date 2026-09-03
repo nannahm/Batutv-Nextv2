@@ -161,6 +161,18 @@ export const LoginPage: React.FC<LoginPageProps> = ({
         uid: fbUser.uid,
       };
 
+      // Exchange ID token with server-side httpOnly session cookie (D-006)
+      try {
+        const idToken = await fbUser.getIdToken();
+        await fetch('/api/auth/session', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ idToken }),
+        });
+      } catch (cookieErr) {
+        console.warn('Gagal sinkronisasi session cookie httpOnly ke server:', cookieErr);
+      }
+
       saveAdminSession(authUser);
 
       logSystemActivity(
