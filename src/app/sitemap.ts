@@ -1,7 +1,7 @@
 import { MetadataRoute } from 'next';
-import { initialAdminArticles } from '@/src/data/newsAdminDummyData';
+import { fetchPublishedArticlesLive } from '@/src/features/articles/data/liveFirestoreService';
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = 'https://batutv.id';
   const now = new Date();
 
@@ -20,14 +20,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
     },
   ];
 
-  const articleRoutes: MetadataRoute.Sitemap = initialAdminArticles
-    .filter((article) => article.status === 'published')
-    .map((article) => ({
-      url: `${baseUrl}/berita/${article.slug}`,
-      lastModified: article.updatedAt ? new Date(article.updatedAt) : now,
-      changeFrequency: 'daily',
-      priority: article.isHeadline ? 0.9 : 0.7,
-    }));
+  const fetchResult = await fetchPublishedArticlesLive(100);
+  const articleRoutes: MetadataRoute.Sitemap = fetchResult.articles.map((article) => ({
+    url: `${baseUrl}/berita/${article.slug}`,
+    lastModified: article.updatedAt ? new Date(article.updatedAt) : now,
+    changeFrequency: 'daily',
+    priority: article.isHeadline ? 0.9 : 0.7,
+  }));
 
   return [...staticRoutes, ...articleRoutes];
 }
