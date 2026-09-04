@@ -542,3 +542,45 @@ export async function bulkUpdateTagStatusAction(
     };
   }
 }
+
+/**
+ * Server Action: Ambil semua kategori untuk dashboard admin
+ */
+export async function getAdminCategoriesAction(): Promise<{
+  success: boolean;
+  categories: AdminCategory[];
+  message?: string;
+}> {
+  try {
+    const categories = await adminFirestoreCategoryRepository.getAll();
+    return { success: true, categories };
+  } catch (err: any) {
+    console.error('[getAdminCategoriesAction] Gagal mengambil kategori:', err);
+    return {
+      success: false,
+      categories: [],
+      message: err?.message || 'Gagal mengambil data kategori',
+    };
+  }
+}
+
+/**
+ * Server Action: Ambil semua tag untuk dashboard admin
+ */
+export async function getAdminTagsAction(): Promise<{
+  success: boolean;
+  tags: AdminTag[];
+  message?: string;
+}> {
+  try {
+    const tags = await adminFirestoreTagRepository.getAll();
+    return { success: true, tags };
+  } catch (err: any) {
+    console.error('[getAdminTagsAction] Gagal mengambil tags:', err);
+    return {
+      success: false,
+      tags: [],
+      message: err?.message || 'Gagal mengambil data tag',
+    };
+  }
+}

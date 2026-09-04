@@ -347,7 +347,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     if (roleKey === 'admin' || roleKey === 'redaksi' || roleKey === 'editor') {
       pendukungItems.push({
         name: 'Kategori',
-        path: '/batutv-control/kategori',
+        path: '/batutv-control/categories',
         icon: Tags,
         badge: categoryCount.toString(),
         isReady: true,
@@ -365,7 +365,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     if (roleKey === 'admin' || roleKey === 'redaksi' || roleKey === 'editor') {
       pendukungItems.push({
         name: 'Tag',
-        path: '/batutv-control/tag',
+        path: '/batutv-control/tags',
         icon: Hash,
         badge: tagCount.toString(),
         isReady: true,

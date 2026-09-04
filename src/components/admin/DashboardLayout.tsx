@@ -61,10 +61,12 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
       case '/batutv-control/dashboard':
         return 'Dashboard';
       case '/batutv-control/kategori':
+      case '/batutv-control/categories':
         return 'Manajemen Kategori';
       case '/batutv-control/media':
         return 'Penyimpanan Media';
       case '/batutv-control/tag':
+      case '/batutv-control/tags':
         return 'Manajemen Tag & Topik';
       case '/batutv-control/penulis':
       case '/batutv-control/master-data/penulis':

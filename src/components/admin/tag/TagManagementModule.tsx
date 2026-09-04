@@ -22,19 +22,36 @@ import {
   bulkUpdateTagStatus,
   getStoredTagCounts,
 } from '../../../data/tagAdminStore';
+import {
+  createTagAction,
+  updateTagAction,
+  deleteTagAction,
+  bulkUpdateTagStatusAction,
+  getAdminTagsAction,
+} from '@/src/features/taxonomy/actions';
 import { TagListView } from './TagListView';
 import { TagFormModal } from './TagFormModal';
 import { TagDeleteModal } from './TagDeleteModal';
 
 interface TagManagementModuleProps {
   onNavigateToPublic?: (path: string) => void;
+  currentUser?: any;
 }
 
 export const TagManagementModule: React.FC<TagManagementModuleProps> = ({
   onNavigateToPublic,
+  currentUser,
 }) => {
   // Master state for tags with live counts
   const [tags, setTags] = useState<AdminTag[]>(() => getTagsWithCounts());
+
+  // RBAC check: Only Admin, Redaksi, Editor can mutate. Jurnalis, Wartawan, Kontributor are read-only.
+  const userRole = (currentUser?.role || '').toLowerCase();
+  const canManage =
+    !currentUser ||
+    userRole.includes('admin') ||
+    userRole.includes('redaksi') ||
+    userRole.includes('editor');
 
   // Modal states
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
@@ -61,13 +78,28 @@ export const TagManagementModule: React.FC<TagManagementModuleProps> = ({
     }, 3500);
   }, []);
 
-  // Reload tags with live counts
-  const reloadTags = useCallback(() => {
+  // Reload tags with live counts & server sync
+  const reloadTags = useCallback(async () => {
+    // 1. Initial immediate local state
     setTags(getTagsWithCounts());
+
+    // 2. Fetch fresh from Firestore Admin SDK if possible
+    try {
+      const serverResult = await getAdminTagsAction();
+      if (serverResult.success && serverResult.tags && serverResult.tags.length > 0) {
+        setTags(serverResult.tags);
+      }
+    } catch {
+      // Keep local store fallback
+    }
   }, []);
 
+  React.useEffect(() => {
+    reloadTags();
+  }, [reloadTags]);
+
   // Handler: Add or Edit Tag Save
-  const handleSaveTag = (data: {
+  const handleSaveTag = async (data: {
     name: string;
     slug: string;
     contentTypes: TagContentType[];
@@ -75,7 +107,23 @@ export const TagManagementModule: React.FC<TagManagementModuleProps> = ({
     seoTitle: string;
     metaDescription: string;
   }) => {
+    if (!canManage) {
+      showToast('Akses ditolak: Hanya Administrator atau Redaksi yang berwenang mengelola tag.', 'error');
+      return;
+    }
+
     if (tagToEdit) {
+      // Server Action
+      try {
+        const actionRes = await updateTagAction(tagToEdit.id, data);
+        if (!actionRes.success) {
+          showToast(actionRes.message || 'Gagal memperbarui tag di Firestore.', 'error');
+        }
+      } catch (err: any) {
+        console.warn('Firestore tag update failed, falling back to local storage:', err);
+      }
+
+      // Local store backup
       const res = updateTag(tagToEdit.id, data);
       if (res.success) {
         showToast(`Tag #${data.name} berhasil diperbarui.`, 'success');
@@ -86,6 +134,17 @@ export const TagManagementModule: React.FC<TagManagementModuleProps> = ({
         showToast(res.error || 'Gagal memperbarui tag.', 'error');
       }
     } else {
+      // Server Action
+      try {
+        const actionRes = await createTagAction(data);
+        if (!actionRes.success) {
+          showToast(actionRes.message || 'Gagal menambahkan tag ke Firestore.', 'error');
+        }
+      } catch (err: any) {
+        console.warn('Firestore tag create failed, falling back to local storage:', err);
+      }
+
+      // Local store backup
       const res = addTag(data);
       if (res.success) {
         showToast(`Tag #${data.name} berhasil didaftarkan.`, 'success');
@@ -98,7 +157,18 @@ export const TagManagementModule: React.FC<TagManagementModuleProps> = ({
   };
 
   // Handler: Delete Tag Confirm
-  const handleConfirmDelete = (id: string) => {
+  const handleConfirmDelete = async (id: string) => {
+    if (!canManage) {
+      showToast('Akses ditolak: Hanya Administrator yang berwenang menghapus tag.', 'error');
+      return;
+    }
+
+    try {
+      await deleteTagAction(id);
+    } catch (err: any) {
+      console.warn('Firestore tag delete failed, falling back to local storage:', err);
+    }
+
     const res = deleteTag(id);
     if (res.success) {
       showToast('Tag berhasil dihapus secara permanen.', 'success');
@@ -109,8 +179,20 @@ export const TagManagementModule: React.FC<TagManagementModuleProps> = ({
   };
 
   // Handler: Toggle single status
-  const handleToggleStatus = (id: string, currentStatus: TagStatus) => {
+  const handleToggleStatus = async (id: string, currentStatus: TagStatus) => {
+    if (!canManage) {
+      showToast('Akses ditolak: Anda tidak memiliki wewenang mengubah status tag.', 'error');
+      return;
+    }
+
     const newStatus: TagStatus = currentStatus === 'active' ? 'inactive' : 'active';
+
+    try {
+      await updateTagAction(id, { status: newStatus });
+    } catch (err) {
+      console.warn('Firestore tag status toggle failed:', err);
+    }
+
     const res = updateTag(id, { status: newStatus });
     if (res.success) {
       showToast(
@@ -124,7 +206,18 @@ export const TagManagementModule: React.FC<TagManagementModuleProps> = ({
   };
 
   // Handler: Deactivate tag from delete modal
-  const handleDeactivateTag = (id: string) => {
+  const handleDeactivateTag = async (id: string) => {
+    if (!canManage) {
+      showToast('Akses ditolak: Anda tidak memiliki wewenang menonaktifkan tag.', 'error');
+      return;
+    }
+
+    try {
+      await updateTagAction(id, { status: 'inactive' });
+    } catch (err) {
+      console.warn('Firestore tag deactivation failed:', err);
+    }
+
     const res = updateTag(id, { status: 'inactive' });
     if (res.success) {
       showToast('Tag berhasil dinonaktifkan.', 'info');
@@ -133,7 +226,18 @@ export const TagManagementModule: React.FC<TagManagementModuleProps> = ({
   };
 
   // Handler: Bulk status update
-  const handleBulkUpdateStatus = (ids: string[], status: TagStatus) => {
+  const handleBulkUpdateStatus = async (ids: string[], status: TagStatus) => {
+    if (!canManage) {
+      showToast('Akses ditolak: Anda tidak memiliki wewenang mengubah status tag secara massal.', 'error');
+      return;
+    }
+
+    try {
+      await bulkUpdateTagStatusAction(ids, status);
+    } catch (err) {
+      console.warn('Firestore bulk tag status update failed:', err);
+    }
+
     const res = bulkUpdateTagStatus(ids, status);
     if (res.success) {
       showToast(
