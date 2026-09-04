@@ -44,16 +44,16 @@ service cloud.firestore {
 
     // ====================================================
     // TAXONOMIES (CATEGORIES & TAGS)
-    // Public read allowed, write strictly superadmin.
+    // Public read allowed, write strictly superadmin and editor.
     // ====================================================
     match /categories/{categoryId} {
       allow read: if true;
-      allow write: if isSuperAdmin();
+      allow write: if isSuperAdmin() || hasRole('editor');
     }
 
     match /tags/{tagId} {
       allow read: if true;
-      allow write: if isSuperAdmin();
+      allow write: if isSuperAdmin() || hasRole('editor');
     }
 
     // ====================================================

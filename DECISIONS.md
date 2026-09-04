@@ -205,11 +205,27 @@
   Form editor naskah berita (`NewsEditorView`) dan video (`VideoEditorView`) sebelumnya mengandalkan string input koma manual untuk tagar dan daftar kategori lokal statis tanpa validasi sinkronisasi ke master data taksonomi di Firestore.
 - **Keputusan**:
   1. Membangun komponen reusable `TaxonomyTagInput` (`src/components/admin/common/TaxonomyTagInput.tsx`) yang menyediakan fitur chip interaktif, autocomplete saran dari master tag aktif, filter relevansi konten (`news` vs `video`), dan quick-selection chips.
-  2. Mengintegrasikan sinkronisasi kategori live dari `getAdminCategoriesAction` ke dalam dropdown `NewsEditorView` dan `VideoEditorView` dengan filter `status == 'active'` dan tipe konten yang sesuai.
+  2. Mengintegrasikan sinkronisasi kategori live dari master taksonomi ke dalam dropdown `NewsEditorView` dan `VideoEditorView` dengan filter `status == 'active'` dan tipe konten yang sesuai.
   3. Menyimpan referensi terstruktur `categoryId` dan `categorySlug` yang teresolusi secara otomatis di payload simpan naskah berita dan video.
 - **Konsekuensi**:
   - Mengurangi inkonsistensi penamaan tag dan typo redaksi.
   - Memastikan seluruh artikel dan video terindeks ke taksonomi aktif yang sah.
+
+### D-025: Pemisahan Akses Server Actions vs Client Store pada Komponen Klien SPA
+- **Status**: Diterima
+- **Tanggal**: 2026-09-04 (Pasca Fase 5 / Hardening Arsitektur)
+- **Konteks**:
+  Komponen UI admin yang di-render dalam mode SPA Vite (`src/components/admin/...`) sempat mengimpor Server Actions (`src/features/taxonomy/actions.ts`). Karena `actions.ts` mengimpor `firebaseAdmin.ts` yang memerlukan modul runtime Node.js server (`@google-cloud/firestore`, `firebase-admin`, `stream`, `tls`), bundler klien Vite mengeksternalkannya menjadi `undefined`, sehingga memicu error runtime browser `Uncaught TypeError: Class extends value undefined is not a constructor or null` dan layar putih (blank screen).
+- **Keputusan**:
+  1. Komponen sisi klien (SPA) yang berjalan di bawah bundler Vite/browser DILARANG mengimpor Server Actions yang mengikat dependensi Firebase Admin SDK Node.js.
+  2. Komponen sisi klien berinteraksi melalui client data store (`categoryAdminStore.ts`, `tagAdminStore.ts`) yang menggunakan Firebase Client SDK (`src/repositories/firestore/*`) dan event-driven state sync (`CATEGORIES_UPDATED_EVENT`, `TAGS_UPDATED_EVENT`).
+  3. Server Actions (`src/features/taxonomy/actions.ts`) didedikasikan secara eksklusif untuk Server Components dan route handlers Next.js (SSR/App Router).
+  4. Menyelaraskan aturan `firestore.rules` agar mengizinkan peran `editor` selain `superadmin` (`isSuperAdmin() || hasRole('editor')`) untuk operasi write pada koleksi `categories` dan `tags`.
+- **Konsekuensi**:
+  - Bundle klien bersih 100% dari kebocoran modul server Node.js.
+  - Mencegah runtime crash dan layar putih pada preview browser.
+  - Arsitektur dua-jalur (Client Store via Client SDK untuk CSR, Server Actions via Admin SDK untuk SSR Next.js) terdokumentasi dan terisolasi secara tegas.
+
 
 
 
