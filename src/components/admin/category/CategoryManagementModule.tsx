@@ -18,14 +18,8 @@ import {
   updateCategory,
   deleteCategory,
   bulkUpdateCategoryStatus,
+  CATEGORIES_UPDATED_EVENT,
 } from '../../../data/categoryAdminStore';
-import {
-  createCategoryAction,
-  updateCategoryAction,
-  deleteCategoryAction,
-  bulkUpdateCategoryStatusAction,
-  getAdminCategoriesAction,
-} from '@/src/features/taxonomy/actions';
 import { CategoryListView } from './CategoryListView';
 import { CategoryFormModal } from './CategoryFormModal';
 import { CategoryDeleteModal } from './CategoryDeleteModal';
@@ -77,27 +71,23 @@ export const CategoryManagementModule: React.FC<CategoryManagementModuleProps> =
   }, []);
 
   // Reload categories with live counts & server sync
-  const reloadCategories = useCallback(async () => {
-    // 1. Initial immediate local state
+  const reloadCategories = useCallback(() => {
     setCategories(getCategoriesWithCounts());
-
-    // 2. Fetch fresh from Firestore Admin SDK if possible
-    try {
-      const serverResult = await getAdminCategoriesAction();
-      if (serverResult.success && serverResult.categories && serverResult.categories.length > 0) {
-        setCategories(serverResult.categories);
-      }
-    } catch {
-      // Keep local store fallback
-    }
   }, []);
 
   useEffect(() => {
     reloadCategories();
+    const handleUpdate = () => {
+      setCategories(getCategoriesWithCounts());
+    };
+    window.addEventListener(CATEGORIES_UPDATED_EVENT, handleUpdate);
+    return () => {
+      window.removeEventListener(CATEGORIES_UPDATED_EVENT, handleUpdate);
+    };
   }, [reloadCategories]);
 
   // Handler: Add or Edit Category Save
-  const handleSaveCategory = async (data: {
+  const handleSaveCategory = (data: {
     name: string;
     slug: string;
     description: string;
@@ -113,17 +103,6 @@ export const CategoryManagementModule: React.FC<CategoryManagementModuleProps> =
     }
 
     if (categoryToEdit) {
-      // Server Action
-      try {
-        const actionRes = await updateCategoryAction(categoryToEdit.id, data);
-        if (!actionRes.success) {
-          showToast(actionRes.message || 'Gagal memperbarui kategori di Firestore.', 'error');
-        }
-      } catch (err: any) {
-        console.warn('Firestore update failed, falling back to local storage:', err);
-      }
-
-      // Local store backup
       const res = updateCategory(categoryToEdit.id, data);
       if (res.success) {
         showToast(`Kategori "${data.name}" berhasil diperbarui.`, 'success');
@@ -134,17 +113,6 @@ export const CategoryManagementModule: React.FC<CategoryManagementModuleProps> =
         showToast(res.error || 'Gagal memperbarui kategori.', 'error');
       }
     } else {
-      // Server Action
-      try {
-        const actionRes = await createCategoryAction(data);
-        if (!actionRes.success) {
-          showToast(actionRes.message || 'Gagal menambahkan kategori ke Firestore.', 'error');
-        }
-      } catch (err: any) {
-        console.warn('Firestore create failed, falling back to local storage:', err);
-      }
-
-      // Local store backup
       const res = addCategory(data);
       if (res.success) {
         showToast(`Kategori "${data.name}" berhasil ditambahkan.`, 'success');
@@ -157,16 +125,10 @@ export const CategoryManagementModule: React.FC<CategoryManagementModuleProps> =
   };
 
   // Handler: Delete Category
-  const handleConfirmDelete = async (id: string) => {
+  const handleConfirmDelete = (id: string) => {
     if (!canManage) {
       showToast('Akses ditolak: Hanya Administrator yang berwenang menghapus kategori.', 'error');
       return;
-    }
-
-    try {
-      await deleteCategoryAction(id);
-    } catch (err: any) {
-      console.warn('Firestore delete failed, falling back to local storage:', err);
     }
 
     const res = deleteCategory(id);
@@ -179,19 +141,13 @@ export const CategoryManagementModule: React.FC<CategoryManagementModuleProps> =
   };
 
   // Handler: Toggle single status
-  const handleToggleStatus = async (id: string, currentStatus: CategoryStatus) => {
+  const handleToggleStatus = (id: string, currentStatus: CategoryStatus) => {
     if (!canManage) {
       showToast('Akses ditolak: Anda tidak memiliki wewenang mengubah status kategori.', 'error');
       return;
     }
 
     const newStatus: CategoryStatus = currentStatus === 'active' ? 'inactive' : 'active';
-
-    try {
-      await updateCategoryAction(id, { status: newStatus });
-    } catch (err) {
-      console.warn('Firestore status toggle failed:', err);
-    }
 
     const res = updateCategory(id, { status: newStatus });
     if (res.success) {
@@ -206,16 +162,10 @@ export const CategoryManagementModule: React.FC<CategoryManagementModuleProps> =
   };
 
   // Handler: Deactivate category from delete modal
-  const handleDeactivateCategory = async (id: string) => {
+  const handleDeactivateCategory = (id: string) => {
     if (!canManage) {
       showToast('Akses ditolak: Anda tidak memiliki wewenang menonaktifkan kategori.', 'error');
       return;
-    }
-
-    try {
-      await updateCategoryAction(id, { status: 'inactive' });
-    } catch (err) {
-      console.warn('Firestore deactivation failed:', err);
     }
 
     const res = updateCategory(id, { status: 'inactive' });
@@ -226,16 +176,10 @@ export const CategoryManagementModule: React.FC<CategoryManagementModuleProps> =
   };
 
   // Handler: Bulk status update
-  const handleBulkUpdateStatus = async (ids: string[], status: CategoryStatus) => {
+  const handleBulkUpdateStatus = (ids: string[], status: CategoryStatus) => {
     if (!canManage) {
       showToast('Akses ditolak: Anda tidak memiliki wewenang mengubah status kategori secara massal.', 'error');
       return;
-    }
-
-    try {
-      await bulkUpdateCategoryStatusAction(ids, status);
-    } catch (err) {
-      console.warn('Firestore bulk status update failed:', err);
     }
 
     const res = bulkUpdateCategoryStatus(ids, status);

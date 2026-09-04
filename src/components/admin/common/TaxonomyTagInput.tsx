@@ -3,8 +3,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Tag as TagIcon, X, Plus, Check } from 'lucide-react';
 import { AdminTag, TagContentType } from '@/src/types/admin';
-import { getStoredTags } from '@/src/data/tagAdminStore';
-import { getAdminTagsAction } from '@/src/features/taxonomy/actions';
+import { getStoredTags, TAGS_UPDATED_EVENT } from '@/src/data/tagAdminStore';
 
 interface TaxonomyTagInputProps {
   tags: string[];
@@ -28,23 +27,15 @@ export const TaxonomyTagInput: React.FC<TaxonomyTagInputProps> = ({
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Sync available tags with backend if possible
+  // Sync available tags with local cache and realtime store events
   useEffect(() => {
-    let isMounted = true;
-    const fetchTags = async () => {
-      try {
-        const res = await getAdminTagsAction();
-        if (res.success && res.tags && res.tags.length > 0 && isMounted) {
-          const activeOnly = res.tags.filter((t) => t.status === 'active');
-          setAvailableTags(activeOnly);
-        }
-      } catch {
-        // keep local store fallback
-      }
+    const handleTagsUpdate = () => {
+      setAvailableTags(getStoredTags().filter((t) => t.status === 'active'));
     };
-    fetchTags();
+
+    window.addEventListener(TAGS_UPDATED_EVENT, handleTagsUpdate);
     return () => {
-      isMounted = false;
+      window.removeEventListener(TAGS_UPDATED_EVENT, handleTagsUpdate);
     };
   }, []);
 

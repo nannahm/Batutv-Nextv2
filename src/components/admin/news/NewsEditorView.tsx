@@ -23,14 +23,13 @@ import {
   Info,
 } from 'lucide-react';
 import { AdminArticle, ArticleStatus, AdminMedia, AdminUser, AdminCategory } from '../../../types/admin';
-import { getStoredCategories } from '../../../data/categoryAdminStore';
+import { getStoredCategories, CATEGORIES_UPDATED_EVENT } from '../../../data/categoryAdminStore';
 import { getActiveAuthors } from '../../../data/authorAdminStore';
 import { checkArticleEditPermission, canRolePublish, normalizeUserRole } from '../../../utils/rbac';
 import { NewsRichEditor } from './NewsRichEditor';
 import { NewsPreviewModal } from './NewsPreviewModal';
 import { MediaPickerModal } from '../media/MediaPickerModal';
 import { TaxonomyTagInput } from '../common/TaxonomyTagInput';
-import { getAdminCategoriesAction } from '@/src/features/taxonomy/actions';
 
 interface NewsEditorViewProps {
   initialArticle?: AdminArticle | null;
@@ -87,24 +86,17 @@ export const NewsEditorView: React.FC<NewsEditorViewProps> = ({
   const [slug, setSlug] = useState(initialArticle?.slug || '');
   const [isSlugCustom, setIsSlugCustom] = useState(false);
   const [category, setCategory] = useState(initialArticle?.category || 'Daerah');
-  const [liveCategories, setLiveCategories] = useState<AdminCategory[]>([]);
+  const [liveCategories, setLiveCategories] = useState<AdminCategory[]>(() => getStoredCategories());
 
-  // Sync active categories from server
+  // Sync active categories with local cache and store updates
   useEffect(() => {
-    let isMounted = true;
-    const fetchCats = async () => {
-      try {
-        const res = await getAdminCategoriesAction();
-        if (res.success && res.categories && res.categories.length > 0 && isMounted) {
-          setLiveCategories(res.categories);
-        }
-      } catch {
-        // fallback
-      }
+    const handleCategoriesUpdate = () => {
+      setLiveCategories(getStoredCategories());
     };
-    fetchCats();
+
+    window.addEventListener(CATEGORIES_UPDATED_EVENT, handleCategoriesUpdate);
     return () => {
-      isMounted = false;
+      window.removeEventListener(CATEGORIES_UPDATED_EVENT, handleCategoriesUpdate);
     };
   }, []);
 
