@@ -1,6 +1,8 @@
-import { AdminCategory, AdminTag } from '@/src/types/admin';
+import { AdminCategory, AdminTag, AdminArticle } from '@/src/types/admin';
 import { initialAdminCategories } from '@/src/data/categoryAdminDummyData';
 import { initialAdminTags } from '@/src/data/tagAdminDummyData';
+import { initialAdminArticles } from '@/src/data/newsAdminDummyData';
+import { fromArticleFirestoreDocument } from '@/src/repositories/firestore/firestoreArticleRepository';
 import { fromCategoryFirestoreDocument } from './adminFirestoreCategoryRepository';
 import { fromTagFirestoreDocument } from './adminFirestoreTagRepository';
 import { getAdminFirestore } from '@/src/lib/firebaseAdmin';
@@ -13,6 +15,7 @@ import {
 
 const CATEGORIES_COLLECTION = 'categories';
 const TAGS_COLLECTION = 'tags';
+const ARTICLES_COLLECTION = 'articles';
 
 /**
  * Mengambil 1 kategori aktif berdasarkan slug di server context:
@@ -163,3 +166,84 @@ export async function fetchActiveTagsLive(): Promise<TagsListFetchResult> {
     return { source: 'seed-fallback', tags: fallbackActive, warning };
   }
 }
+
+/**
+ * Mengambil daftar artikel published untuk arsip kategori tertentu:
+ * - 2-Tier Architecture: Admin SDK Firestore -> Static Seed Cache
+ * - Filter eksplisit where('status', '==', 'published')
+ */
+export async function fetchArticlesByCategoryLive(
+  categorySlug: string,
+  limitCount: number = 30
+): Promise<AdminArticle[]> {
+  try {
+    const adminDb = getAdminFirestore();
+    const snap = await adminDb
+      .collection(ARTICLES_COLLECTION)
+      .where('status', '==', 'published')
+      .where('categorySlug', '==', categorySlug)
+      .limit(limitCount)
+      .get();
+
+    if (!snap.empty) {
+      return snap.docs.map((docSnap) =>
+        fromArticleFirestoreDocument(docSnap.id, docSnap.data())
+      );
+    }
+  } catch (err) {
+    console.warn(`[LiveFirestoreTaxonomyService] Firestore query articles for category "${categorySlug}" failed:`, err);
+  }
+
+  // Fallback ke seed articles
+  return initialAdminArticles
+    .filter(
+      (a) =>
+        a.status === 'published' &&
+        (a.categorySlug === categorySlug ||
+          a.category.toLowerCase().replace(/[^a-z0-9]/g, '-') === categorySlug)
+    )
+    .slice(0, limitCount);
+}
+
+/**
+ * Mengambil daftar artikel published untuk arsip tag tertentu:
+ * - 2-Tier Architecture: Admin SDK Firestore -> Static Seed Cache
+ * - Filter eksplisit where('status', '==', 'published')
+ */
+export async function fetchArticlesByTagLive(
+  tagSlug: string,
+  limitCount: number = 30
+): Promise<AdminArticle[]> {
+  try {
+    const adminDb = getAdminFirestore();
+    // Firestore array-contains untuk tags
+    const snap = await adminDb
+      .collection(ARTICLES_COLLECTION)
+      .where('status', '==', 'published')
+      .where('tags', 'array-contains', tagSlug)
+      .limit(limitCount)
+      .get();
+
+    if (!snap.empty) {
+      return snap.docs.map((docSnap) =>
+        fromArticleFirestoreDocument(docSnap.id, docSnap.data())
+      );
+    }
+  } catch (err) {
+    console.warn(`[LiveFirestoreTaxonomyService] Firestore query articles for tag "${tagSlug}" failed:`, err);
+  }
+
+  // Fallback ke seed articles (cek jika array tags mengandung slug atau nama)
+  const normTag = tagSlug.toLowerCase().replace(/[^a-z0-9]/g, '');
+  return initialAdminArticles
+    .filter((a) => {
+      if (a.status !== 'published' || !Array.isArray(a.tags)) return false;
+      return a.tags.some(
+        (t) =>
+          t.toLowerCase().replace(/[^a-z0-9]/g, '') === normTag ||
+          t.toLowerCase() === tagSlug
+      );
+    })
+    .slice(0, limitCount);
+}
+

@@ -1,6 +1,10 @@
 import { MetadataRoute } from 'next';
 import { fetchPublishedArticlesLive } from '@/src/features/articles/data/liveFirestoreService';
 import { fetchPublishedVideosLive } from '@/src/features/videos/data/liveFirestoreVideoService';
+import {
+  fetchActiveCategoriesLive,
+  fetchActiveTagsLive,
+} from '@/src/features/taxonomy/data/liveFirestoreTaxonomyService';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = 'https://batutv.id';
@@ -47,5 +51,22 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: video.views && video.views > 5000 ? 0.8 : 0.6,
   }));
 
-  return [...staticRoutes, ...articleRoutes, ...videoRoutes];
+  const categoriesResult = await fetchActiveCategoriesLive();
+  const categoryRoutes: MetadataRoute.Sitemap = categoriesResult.categories.map((category) => ({
+    url: `${baseUrl}/kategori/${category.slug}`,
+    lastModified: category.updatedAt ? new Date(category.updatedAt) : now,
+    changeFrequency: 'daily',
+    priority: 0.7,
+  }));
+
+  const tagsResult = await fetchActiveTagsLive();
+  const tagRoutes: MetadataRoute.Sitemap = tagsResult.tags.map((tag) => ({
+    url: `${baseUrl}/tag/${tag.slug}`,
+    lastModified: tag.updatedAt ? new Date(tag.updatedAt) : now,
+    changeFrequency: 'weekly',
+    priority: 0.5,
+  }));
+
+  return [...staticRoutes, ...articleRoutes, ...videoRoutes, ...categoryRoutes, ...tagRoutes];
 }
+
