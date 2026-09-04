@@ -9,9 +9,9 @@ export const USER_UPDATED_EVENT = 'batutv_users_updated';
 
 // Matrix of role capabilities based on project specification
 export const ROLE_PERMISSIONS_MATRIX: Record<UserRole, RolePermissionDetail> = {
-  admin: {
-    role: 'admin',
-    name: 'Administrator',
+  superadmin: {
+    role: 'superadmin',
+    name: 'Super Administrator',
     badgeColor: 'bg-red-600/10 text-red-500 border-red-500/20',
     description: 'Akses penuh ke seluruh modul CMS, arsitektur sistem, keamanan, konfigurasi portal, dan manajemen akun pengguna.',
     allowedAccess: [
@@ -39,9 +39,39 @@ export const ROLE_PERMISSIONS_MATRIX: Record<UserRole, RolePermissionDetail> = {
     restrictedActions: [],
     workflowNotes: 'Akses root tanpa batasan workflow redaksional.',
   },
+  admin: {
+    role: 'admin',
+    name: 'Administrator (Legacy)',
+    badgeColor: 'bg-red-600/10 text-red-500 border-red-500/20',
+    description: 'Akses penuh ke seluruh modul CMS, arsitektur sistem, keamanan, konfigurasi portal, dan manajemen akun pengguna.',
+    allowedAccess: [
+      'Dashboard & Statistik',
+      'Artikel Berita (Full)',
+      'Video Liputan (Full)',
+      'Media Library (Full)',
+      'Kategori & Tag',
+      'Master Data Penulis',
+      'Master Data Pages',
+      'Manajemen Navigasi SO2',
+      'Master Data Footer',
+      'Master Data Site Settings',
+      'Pengaturan Sistem & Keamanan',
+      'Manajemen Pengguna (User Management)',
+    ],
+    capabilities: [
+      'Menerbitkan (Publish) & Menarik (Unpublish) semua konten',
+      'Mengatur Headline Utama & Hero Carousel',
+      'Menambah, mengedit, dan menghapus seluruh akun CMS',
+      'Konfigurasi Session Timeout, Password Policy, dan Maintenance Mode',
+      'Ekspor & Impor Data Backup CMS',
+      'Akses Audit Log Aktivitas Redaksi Lengkap',
+    ],
+    restrictedActions: [],
+    workflowNotes: 'Akses root tanpa batasan workflow redaksional (Dipetakan ke superadmin).',
+  },
   redaksi: {
     role: 'redaksi',
-    name: 'Redaksi',
+    name: 'Redaksi (Legacy)',
     badgeColor: 'bg-rose-500/10 text-rose-400 border-rose-500/20',
     description: 'Dewan redaksi penanggung jawab kebijakan editorial, penataan beranda, kurasi naskah, dan supervisi publikasi.',
     allowedAccess: [
@@ -142,7 +172,7 @@ export const ROLE_PERMISSIONS_MATRIX: Record<UserRole, RolePermissionDetail> = {
   },
 };
 
-// Initial Seed Users mapped to Author Master Data
+// Initial Seed Users mapped to Author Master Data (Canonical Roles: superadmin | editor | reporter)
 export const INITIAL_CMS_USERS: CMSUser[] = [
   {
     id: 'usr-000',
@@ -150,7 +180,7 @@ export const INITIAL_CMS_USERS: CMSUser[] = [
     username: 'dzakyinne',
     email: 'dzakyinne@gmail.com',
     password: 'Password@123',
-    role: 'admin',
+    role: 'superadmin',
     status: 'aktif',
     lastLogin: '2026-09-01T08:00:00.000Z',
     lastLoginDetails: {
@@ -175,7 +205,7 @@ export const INITIAL_CMS_USERS: CMSUser[] = [
     username: 'ahmad.fauzi',
     email: 'ahmad.fauzi@batutv.id',
     password: 'Password@123',
-    role: 'admin',
+    role: 'superadmin',
     status: 'aktif',
     lastLogin: '2026-08-29T18:45:00.000Z',
     lastLoginDetails: {
@@ -200,7 +230,7 @@ export const INITIAL_CMS_USERS: CMSUser[] = [
     username: 'budi.redaksi',
     email: 'budi.santoso@batutv.id',
     password: 'Password@123',
-    role: 'redaksi',
+    role: 'editor',
     status: 'aktif',
     lastLogin: '2026-08-29T17:15:00.000Z',
     lastLoginDetails: {
@@ -275,7 +305,7 @@ export const INITIAL_CMS_USERS: CMSUser[] = [
     username: 'rina.redaksi',
     email: 'rina.wulandari@batutv.id',
     password: 'Password@123',
-    role: 'redaksi',
+    role: 'editor',
     status: 'aktif',
     lastLogin: '2026-08-28T19:30:00.000Z',
     lastLoginDetails: {
@@ -325,7 +355,7 @@ export const INITIAL_CMS_USERS: CMSUser[] = [
     username: 'nadia.kontributor',
     email: 'nadia.putri@batutv.id',
     password: 'Password@123',
-    role: 'kontributor',
+    role: 'reporter',
     status: 'aktif',
     lastLogin: '2026-08-27T15:00:00.000Z',
     lastLoginDetails: {
@@ -350,7 +380,7 @@ export const INITIAL_CMS_USERS: CMSUser[] = [
     username: 'arif.foto',
     email: 'arif.setiawan@batutv.id',
     password: 'Password@123',
-    role: 'kontributor',
+    role: 'reporter',
     status: 'nonaktif',
     lastLogin: '2026-08-10T09:12:00.000Z',
     lastLoginDetails: {
@@ -543,39 +573,27 @@ export const validatePasswordPolicy = (
 
 /**
  * Map Author Position from Master Data to CMS User Role
- * Redaksi / Redaktur -> redaksi
- * Editor -> editor
+ * Redaksi / Redaktur / Pemred -> editor
+ * Editor / Penyunting -> editor
  * Reporter / Wartawan / Jurnalis -> reporter
- * Kontributor -> kontributor
- * Admin -> admin (manual)
+ * Kontributor / Kolumnis -> reporter
+ * Admin / Administrator -> superadmin
  */
 export const mapAuthorPositionToRole = (position?: string): UserRole => {
   if (!position) return 'reporter';
   const p = position.toLowerCase().trim();
+  if (p.includes('admin') || p.includes('administrator')) {
+    return 'superadmin';
+  }
   if (
     p.includes('redaksi') ||
     p.includes('redaktur') ||
     p.includes('pemred') ||
-    p.includes('pemimpin redaksi')
+    p.includes('pemimpin redaksi') ||
+    p.includes('editor') ||
+    p.includes('penyunting')
   ) {
-    return 'redaksi';
-  }
-  if (p.includes('editor') || p.includes('penyunting')) {
     return 'editor';
-  }
-  if (
-    p.includes('reporter') ||
-    p.includes('wartawan') ||
-    p.includes('jurnalis') ||
-    p.includes('liputan')
-  ) {
-    return 'reporter';
-  }
-  if (p.includes('kontributor') || p.includes('kolumnis') || p.includes('penulis tamu')) {
-    return 'kontributor';
-  }
-  if (p.includes('admin') || p.includes('administrator')) {
-    return 'admin';
   }
   return 'reporter';
 };
@@ -1215,16 +1233,21 @@ export const revokeAllUserSessions = (
 // Helper: Calculate Statistics
 export const getUserStats = () => {
   const users = getStoredUsers();
+  const superadmins = users.filter((u) => u.role === 'superadmin' || u.role === 'admin').length;
+  const editors = users.filter((u) => u.role === 'editor' || u.role === 'redaksi').length;
+  const reporters = users.filter((u) => u.role === 'reporter' || u.role === 'kontributor').length;
+
   return {
     total: users.length,
     active: users.filter((u) => u.status === 'aktif').length,
     inactive: users.filter((u) => u.status === 'nonaktif').length,
     suspended: users.filter((u) => u.status === 'ditangguhkan').length,
     linkedToAuthor: users.filter((u) => Boolean(u.authorId)).length,
-    admins: users.filter((u) => u.role === 'admin').length,
-    redaksi: users.filter((u) => u.role === 'redaksi').length,
-    editors: users.filter((u) => u.role === 'editor').length,
-    reporters: users.filter((u) => u.role === 'reporter').length,
-    kontributors: users.filter((u) => u.role === 'kontributor').length,
+    superadmins,
+    admins: superadmins,
+    editors,
+    redaksi: editors,
+    reporters,
+    kontributors: reporters,
   };
 };

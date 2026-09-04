@@ -226,8 +226,25 @@
   - Mencegah runtime crash dan layar putih pada preview browser.
   - Arsitektur dua-jalur (Client Store via Client SDK untuk CSR, Server Actions via Admin SDK untuk SSR Next.js) terdokumentasi dan terisolasi secara tegas.
 
-
-
-
-
-
+### D-026: Penyelarasan Field `role` Dokumen Firestore `CMSUser` ke 3 Role Kanonik
+- **Status**: Diterima
+- **Tanggal**: 2026-09-04 (Fase 6 Sub-Task 0)
+- **Konteks**:
+  Terdapat diskrepansi antara 5 nilai role warisan legacy di dokumen Firestore CMSUser (`admin`, `redaksi`, `editor`, `reporter`, `kontributor`) dengan 3 role kanonik sistem otorisasi Firebase Auth Custom Claims (`superadmin`, `editor`, `reporter`). Kondisi ini berpotensi memicu fragmentasi hak akses (dual-role system) dan inkonsistensi evaluasi izin pada guard SSR maupun aturan keamanan Firestore (`firestore.rules`).
+- **Keputusan**:
+  1. Menyelaraskan seluruh field `role` dokumen Firestore `CMSUser` (`/users/{userId}`) ke 3 role kanonik: `superadmin` | `editor` | `reporter` sebagai *single source of truth*.
+  2. Menerapkan tabel pemetaan kanonik definitif:
+     | Nilai Lama (`UserRole`) | Nilai Kanonik Baru (`CanonicalUserRole`) |
+     | :--- | :--- |
+     | `admin` | `superadmin` |
+     | `redaksi` | `editor` |
+     | `editor` | `editor` |
+     | `reporter` | `reporter` |
+     | `kontributor` | `reporter` |
+  3. Mempertahankan helper `toCanonicalRole()` pada `src/types/user.ts` untuk normalisasi non-destruktif saat membaca/menyimpan dokumen Firestore di repository layer (`FirestoreUserRepository`).
+  4. Menyelaraskan seed data `INITIAL_CMS_USERS`, helper jabatan redaksi `mapAuthorPositionToRole()`, dan agregasi statistik `getUserStats()` di `src/data/userAdminStore.ts` agar langsung menggunakan nilai kanonik dengan tetap menyediakan alias kompatibilitas mundur.
+  5. Menyelaraskan validasi RBAC pada `src/utils/rbac.ts` agar memeriksa role kanonik secara langsung dan konsisten dengan hierarki otorisasi.
+- **Konsekuensi**:
+  - Satu sistem peran tunggal yang seragam dari token klaim Firebase Auth, cookie sesi SSR, hingga penyimpanan dokumen database Firestore.
+  - Menghilangkan ambiguitas pemetaan peran pada UI formulir dan pengelolaan staf redaksi.
+  - Kompatibilitas mundur tetap terlindungi secara aman selama proses transisi migrasi data.

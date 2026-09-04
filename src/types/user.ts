@@ -1,4 +1,44 @@
-export type UserRole = 'admin' | 'redaksi' | 'editor' | 'reporter' | 'kontributor';
+export type CanonicalUserRole = 'superadmin' | 'editor' | 'reporter';
+export type LegacyUserRole = 'admin' | 'redaksi' | 'kontributor';
+/**
+ * Canonical 3-role system: 'superadmin' | 'editor' | 'reporter'.
+ * Legacy values ('admin' | 'redaksi' | 'kontributor') are supported for non-destructive data migration.
+ */
+export type UserRole = CanonicalUserRole | LegacyUserRole;
+
+/**
+ * Normalizes any legacy or arbitrary role string into one of the 3 canonical roles:
+ * - admin -> superadmin
+ * - redaksi -> editor
+ * - editor -> editor
+ * - reporter -> reporter
+ * - kontributor -> reporter
+ */
+export function toCanonicalRole(roleStr?: string | null): CanonicalUserRole {
+  if (!roleStr) return 'reporter';
+  const clean = roleStr.toLowerCase().trim();
+  if (
+    clean === 'superadmin' ||
+    clean === 'super_admin' ||
+    clean === 'admin' ||
+    clean === 'administrator' ||
+    clean.includes('superadmin') ||
+    clean.includes('administrator')
+  ) {
+    return 'superadmin';
+  }
+  if (
+    clean === 'redaksi' ||
+    clean === 'redaktur' ||
+    clean === 'pemred' ||
+    clean === 'pemimpin redaksi' ||
+    clean === 'editor' ||
+    clean.includes('editor')
+  ) {
+    return 'editor';
+  }
+  return 'reporter';
+}
 
 export type UserStatus = 'aktif' | 'nonaktif' | 'ditangguhkan';
 

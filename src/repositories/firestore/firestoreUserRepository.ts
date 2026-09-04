@@ -15,6 +15,7 @@ import { CMSUser, UserRole, UserStatus } from '../../types/user';
 import { IUserRepository, UserQueryOptions } from '../IUserRepository';
 import { sanitizeForFirestore } from './converterUtils';
 import { INITIAL_CMS_USERS } from '../../data/userAdminStore';
+import { toCanonicalRole } from '../../types/user';
 
 const USERS_COLLECTION = 'users';
 const ADMINS_COLLECTION = 'admins';
@@ -32,13 +33,14 @@ function convertDateToString(val: any, fallback: string = new Date().toISOString
 }
 
 export function toUserFirestoreDocument(user: CMSUser): Record<string, any> {
+  const canonicalRole = toCanonicalRole(user.role);
   return sanitizeForFirestore({
     id: user.id,
     fullName: user.fullName || '',
     username: user.username || '',
     email: user.email || '',
     password: user.password || 'Password@123',
-    role: user.role || 'reporter',
+    role: canonicalRole,
     status: user.status || 'aktif',
     authorId: user.authorId || null,
     authorName: user.authorName || null,
@@ -56,13 +58,14 @@ export function toUserFirestoreDocument(user: CMSUser): Record<string, any> {
 
 export function fromUserFirestoreDocument(id: string, data: Record<string, any>): CMSUser {
   const nowIso = new Date().toISOString();
+  const canonicalRole = toCanonicalRole(data.role);
   return {
     id,
     fullName: data.fullName || data.name || 'Pengguna CMS',
     username: data.username || `user_${id.slice(0, 6)}`,
     email: data.email || '',
     password: data.password || 'Password@123',
-    role: (data.role as UserRole) || 'reporter',
+    role: canonicalRole,
     status: (data.status as UserStatus) || 'aktif',
     authorId: data.authorId || null,
     authorName: data.authorName || undefined,
@@ -146,8 +149,9 @@ export class FirestoreUserRepository implements IUserRepository {
     const docRef = doc(db, USERS_COLLECTION, docId);
     await setDoc(docRef, payload, { merge: true });
 
-    // If admin role, also sync to admins collection for security rules exists() checks
-    if (user.role === 'admin') {
+    // If superadmin (or legacy admin) role, also sync to admins collection for security rules exists() checks
+    const canonicalRole = toCanonicalRole(user.role);
+    if (canonicalRole === 'superadmin') {
       try {
         const adminRef = doc(db, ADMINS_COLLECTION, docId);
         await setDoc(adminRef, payload, { merge: true });
@@ -155,7 +159,7 @@ export class FirestoreUserRepository implements IUserRepository {
         console.warn('[FirestoreUserRepository] failed to sync to admins collection:', err);
       }
     } else {
-      // If downgraded from admin, remove from admins collection
+      // If downgraded from superadmin, remove from admins collection
       try {
         const adminRef = doc(db, ADMINS_COLLECTION, docId);
         await deleteDoc(adminRef);
