@@ -49,13 +49,13 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
     if (path.startsWith('/batutv-control/berita/headline')) return 'Headline Hero Portal';
     if (path.startsWith('/batutv-control/berita')) return 'Manajemen Berita';
 
-    if (path.startsWith('/batutv-control/video/tambah')) return 'Tambah Video Baru';
-    if (path.startsWith('/batutv-control/video/edit')) return 'Edit Video';
-    if (path.startsWith('/batutv-control/video/draft')) return 'Draft Video';
-    if (path.startsWith('/batutv-control/video/terjadwal')) return 'Video Terjadwal';
-    if (path.startsWith('/batutv-control/video/terbit')) return 'Video Terbit';
-    if (path.startsWith('/batutv-control/video/sampah')) return 'Sampah Video';
-    if (path.startsWith('/batutv-control/video')) return 'Manajemen Video';
+    if (path.startsWith('/batutv-control/videos/tambah') || path.startsWith('/batutv-control/video/tambah')) return 'Tambah Video Baru';
+    if (path.startsWith('/batutv-control/videos/edit') || path.startsWith('/batutv-control/video/edit')) return 'Edit Video';
+    if (path.startsWith('/batutv-control/videos/draft') || path.startsWith('/batutv-control/video/draft')) return 'Draft Video';
+    if (path.startsWith('/batutv-control/videos/terjadwal') || path.startsWith('/batutv-control/video/terjadwal')) return 'Video Terjadwal';
+    if (path.startsWith('/batutv-control/videos/terbit') || path.startsWith('/batutv-control/video/terbit')) return 'Video Terbit';
+    if (path.startsWith('/batutv-control/videos/sampah') || path.startsWith('/batutv-control/video/sampah')) return 'Sampah Video';
+    if (path.startsWith('/batutv-control/videos') || path.startsWith('/batutv-control/video')) return 'Manajemen Video';
 
     switch (path) {
       case '/batutv-control/dashboard':
@@ -121,7 +121,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
     }
 
     // 3. KONTEN -> VIDEO Module Handling
-    if (currentPath.startsWith('/batutv-control/video')) {
+    if (currentPath.startsWith('/batutv-control/videos') || currentPath.startsWith('/batutv-control/video')) {
       return (
         <VideoManagementModule
           currentPath={currentPath}

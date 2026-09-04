@@ -103,7 +103,7 @@ export const checkRoutePermission = (
   }
 
   // 3. Video Module
-  if (path.startsWith('/batutv-control/video')) {
+  if (path.startsWith('/batutv-control/videos') || path.startsWith('/batutv-control/video')) {
     if (role === 'admin' || role === 'redaksi' || role === 'editor') {
       return { allowed: true, role, moduleName: 'Manajemen Video' };
     }

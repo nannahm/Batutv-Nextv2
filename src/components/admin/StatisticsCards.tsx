@@ -30,7 +30,7 @@ export const StatisticsCards: React.FC<StatisticsCardsProps> = ({ stats, onNavig
       color: 'text-red-600',
       bgIcon: 'bg-red-50',
       borderColor: 'border-red-100',
-      path: '/batutv-control/video',
+      path: '/batutv-control/videos',
       ariaLabel: `Total video saat ini: ${stats.totalVideos} video`,
     },
     {

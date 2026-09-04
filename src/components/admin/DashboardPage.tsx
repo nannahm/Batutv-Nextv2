@@ -97,7 +97,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, onNavigate }
       {/* A02.3.3 — Quick Actions */}
       <QuickActions
         onWriteArticle={() => onNavigate('/batutv-control/berita/tulis')}
-        onAddVideo={() => onNavigate('/batutv-control/video')}
+        onAddVideo={() => onNavigate('/batutv-control/videos/tambah')}
       />
 
       {/* Main Grid: Left (Articles + Videos), Right (Recent Activity) */}
@@ -113,7 +113,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, onNavigate }
           {/* A02.3.5 — Latest YouTube Videos Grid */}
           <LatestVideosGrid
             videos={videos}
-            onViewAll={() => onNavigate('/batutv-control/video')}
+            onViewAll={() => onNavigate('/batutv-control/videos')}
           />
         </div>
 

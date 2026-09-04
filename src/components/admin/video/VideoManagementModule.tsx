@@ -23,7 +23,7 @@ interface VideoManagementModuleProps {
 }
 
 export const VideoManagementModule: React.FC<VideoManagementModuleProps> = ({
-  currentPath = '/batutv-control/video',
+  currentPath = '/batutv-control/videos',
   onNavigate,
   onNavigateToPublic,
   currentUser,
@@ -48,9 +48,13 @@ export const VideoManagementModule: React.FC<VideoManagementModuleProps> = ({
     refreshVideos();
   }, [currentPath, refreshVideos]);
 
-  // Routing detection based on currentPath
-  const isTambahRoute = currentPath === '/batutv-control/video/tambah';
-  const isEditRoute = currentPath.startsWith('/batutv-control/video/edit');
+  // Routing detection based on currentPath (supports normalized /videos and legacy /video)
+  const isTambahRoute =
+    currentPath === '/batutv-control/videos/tambah' ||
+    currentPath === '/batutv-control/video/tambah';
+  const isEditRoute =
+    currentPath.includes('/batutv-control/videos/edit') ||
+    currentPath.includes('/batutv-control/video/edit');
 
   useEffect(() => {
     if (isEditRoute) {
@@ -83,11 +87,11 @@ export const VideoManagementModule: React.FC<VideoManagementModuleProps> = ({
 
   const handleTabChange = (tab: 'all' | 'draft' | 'scheduled' | 'published' | 'trash') => {
     if (onNavigate) {
-      if (tab === 'all') onNavigate('/batutv-control/video');
-      else if (tab === 'draft') onNavigate('/batutv-control/video/draft');
-      else if (tab === 'scheduled') onNavigate('/batutv-control/video/terjadwal');
-      else if (tab === 'published') onNavigate('/batutv-control/video/terbit');
-      else if (tab === 'trash') onNavigate('/batutv-control/video/sampah');
+      if (tab === 'all') onNavigate('/batutv-control/videos');
+      else if (tab === 'draft') onNavigate('/batutv-control/videos/draft');
+      else if (tab === 'scheduled') onNavigate('/batutv-control/videos/terjadwal');
+      else if (tab === 'published') onNavigate('/batutv-control/videos/terbit');
+      else if (tab === 'trash') onNavigate('/batutv-control/videos/sampah');
     }
   };
 
@@ -130,7 +134,7 @@ export const VideoManagementModule: React.FC<VideoManagementModuleProps> = ({
   const handleNewVideo = () => {
     setEditingVideo(null);
     if (onNavigate) {
-      onNavigate('/batutv-control/video/tambah');
+      onNavigate('/batutv-control/videos/tambah');
     } else {
       setCurrentView('create');
     }
@@ -139,7 +143,7 @@ export const VideoManagementModule: React.FC<VideoManagementModuleProps> = ({
   const handleEditVideo = (video: AdminVideo) => {
     setEditingVideo(video);
     if (onNavigate) {
-      onNavigate(`/batutv-control/video/edit/${video.id}`);
+      onNavigate(`/batutv-control/videos/edit/${video.id}`);
     } else {
       setCurrentView('edit');
     }
@@ -148,7 +152,7 @@ export const VideoManagementModule: React.FC<VideoManagementModuleProps> = ({
   const handleCancelEditor = () => {
     setEditingVideo(null);
     if (onNavigate) {
-      onNavigate('/batutv-control/video');
+      onNavigate('/batutv-control/videos');
     } else {
       setCurrentView('list');
     }
@@ -194,10 +198,10 @@ export const VideoManagementModule: React.FC<VideoManagementModuleProps> = ({
     }
 
     if (onNavigate) {
-      if (videoToSave.status === 'published') onNavigate('/batutv-control/video/terbit');
-      else if (videoToSave.status === 'scheduled') onNavigate('/batutv-control/video/terjadwal');
-      else if (videoToSave.status === 'draft') onNavigate('/batutv-control/video/draft');
-      else onNavigate('/batutv-control/video');
+      if (videoToSave.status === 'published') onNavigate('/batutv-control/videos/terbit');
+      else if (videoToSave.status === 'scheduled') onNavigate('/batutv-control/videos/terjadwal');
+      else if (videoToSave.status === 'draft') onNavigate('/batutv-control/videos/draft');
+      else onNavigate('/batutv-control/videos');
     } else {
       setCurrentView('list');
     }
