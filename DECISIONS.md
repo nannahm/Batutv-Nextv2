@@ -173,6 +173,45 @@
   - Implementasi Fase 4 tetap ramping, aman, dan tidak menambah kompleksitas infrastruktur/rules bucket baru.
   - DataURL base64 langsung di Firestore dicatat sebagai technical debt terkait batas 1MB dokumen Firestore.
 
+### D-022: Penegakan Filter Status Taksonomi di Level Aplikasi (Repository/Query)
+- **Status**: Diterima
+- **Tanggal**: 2026-09-03 (Fase 5 Sub-Task 1 & 2)
+- **Konteks**:
+  Aturan keamanan `firestore.rules` untuk koleksi `categories` dan `tags` mengizinkan `read: if true` tanpa filter status (terbuka publik untuk kebutuhan navigasi dan badge UI portal). Beda dengan `articles` dan `videos` di mana rules membatasi `read` hanya untuk dokumen dengan `status == 'published'`, pada taksonomi dokumen berstatus `inactive` secara teknis dapat dibaca oleh client mana pun jika query tidak difilter.
+- **Keputusan**:
+  Penegakan filter status aktif taksonomi ditegakkan secara ketat dan mutlak pada level repository/query aplikasi:
+  1. `liveFirestoreTaxonomyService.ts`: Menggunakan filter query `where('status', '==', 'active')` baik pada pemanggilan tunggal (by slug) maupun koleksi list.
+  2. Fallback in-memory store: Mengaplikasikan filter `.filter(c => c.status === 'active')`.
+  3. Halaman arsip publik `/kategori/[slug]` dan `/tag/[slug]`: Memvalidasi status aktif secara ketat dan memicu `notFound()` (404 kanonik) jika taksonomi yang diminta berstatus non-aktif atau tidak terdaftar.
+- **Konsekuensi**:
+  - Integritas data publik terjaga tanpa perlu mengubah struktur rules yang sudah stabil.
+  - Taksonomi non-aktif terlindungi dari pemaparan tidak sengaja di portal publik.
+
+### D-023: Normalisasi Rute Admin Taksonomi (/categories & /tags) dengan Graceful Redirect
+- **Status**: Diterima
+- **Tanggal**: 2026-09-03 (Fase 5 Sub-Task 3)
+- **Konteks**:
+  Rute admin lama portal berita menggunakan penamaan campuran: bahasa Indonesia untuk taksonomi (`/batutv-control/kategori` dan `/batutv-control/tag`), sedangkan modul lainnya menggunakan bahasa Inggris standar plural (`/batutv-control/articles`, `/batutv-control/videos`, `/batutv-control/media`).
+- **Keputusan**:
+  Menormalisasi rute admin taksonomi ke bahasa Inggris standar: `/batutv-control/categories` dan `/batutv-control/tags`. Untuk menjamin kompatibilitas ke belakang bagi tautan lama, riwayat browser, atau bookmark staf redaksi, rute `/batutv-control/kategori` dan `/batutv-control/tag` diimplementasikan sebagai graceful permanent redirect (`redirect('/batutv-control/categories')` dan `redirect('/batutv-control/tags')`).
+- **Konsekuensi**:
+  - Konvensi URL seluruh panel admin konsisten.
+  - Tidak ada broken link bagi staf redaksi yang mengakses path lama.
+
+### D-024: Integrasi Form Editor Artikel & Video via TaxonomyTagInput & Live Categories Sync
+- **Status**: Diterima
+- **Tanggal**: 2026-09-03 (Fase 5 Sub-Task 4)
+- **Konteks**:
+  Form editor naskah berita (`NewsEditorView`) dan video (`VideoEditorView`) sebelumnya mengandalkan string input koma manual untuk tagar dan daftar kategori lokal statis tanpa validasi sinkronisasi ke master data taksonomi di Firestore.
+- **Keputusan**:
+  1. Membangun komponen reusable `TaxonomyTagInput` (`src/components/admin/common/TaxonomyTagInput.tsx`) yang menyediakan fitur chip interaktif, autocomplete saran dari master tag aktif, filter relevansi konten (`news` vs `video`), dan quick-selection chips.
+  2. Mengintegrasikan sinkronisasi kategori live dari `getAdminCategoriesAction` ke dalam dropdown `NewsEditorView` dan `VideoEditorView` dengan filter `status == 'active'` dan tipe konten yang sesuai.
+  3. Menyimpan referensi terstruktur `categoryId` dan `categorySlug` yang teresolusi secara otomatis di payload simpan naskah berita dan video.
+- **Konsekuensi**:
+  - Mengurangi inkonsistensi penamaan tag dan typo redaksi.
+  - Memastikan seluruh artikel dan video terindeks ke taksonomi aktif yang sah.
+
+
 
 
 

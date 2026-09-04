@@ -17,7 +17,7 @@ basis kode yang ada, mengikuti panduan migrasi di `ARCHITECTURE.md` dan `DECISIO
 - **Project**: BatuTV News Portal
 - **Target Framework**: Next.js 16 App Router (Full Stack)
 - **Database**: Firebase Firestore (`batutv-next`)
-- **Last Updated**: 2026-09-03 (Fase 3 Authentication & RBAC Completed)
+- **Last Updated**: 2026-09-03 (Fase 5 Taksonomi Completed)
 
 ## Phase Status Summary
 
@@ -28,7 +28,7 @@ basis kode yang ada, mengikuti panduan migrasi di `ARCHITECTURE.md` dan `DECISIO
 | **Fase 2** | Articles (Pilot Domain - Repository, Schemas, Actions, SSR Pages, Admin) | 🟢 Selesai | 100% |
 | **Fase 3** | Authentication & RBAC (httpOnly Cookies, Middleware Guard, Custom Claims) | 🟢 Selesai | 100% |
 | **Fase 4** | Videos & Media (YouTube Integration, Player, Storage) | 🟢 Selesai | 100% |
-| **Fase 5** | Taksonomi (Categories, Tags, Archive Routing) | ⚪ Belum Dimulai | 0% |
+| **Fase 5** | Taksonomi (Categories, Tags, Archive Routing) | 🟢 Selesai | 100% |
 | **Fase 6** | Pages, Navigation, Settings, Users (Static Pages, Menus, Sync) | ⚪ Belum Dimulai | 0% |
 | **Fase 7** | Cutover, 23 Audit Scripts, Final Cleanup | ⚪ Belum Dimulai | 0% |
 
@@ -122,6 +122,36 @@ basis kode yang ada, mengikuti panduan migrasi di `ARCHITECTURE.md` dan `DECISIO
    - Routing Admin Media: `src/app/(dashboard)/batutv-control/media/page.tsx` mengintegrasikan `MediaManagementModule` dengan proteksi 3-layer guard yang sama.
    - RBAC Hardening: Server Actions (`src/features/videos/actions.ts`) memvalidasi kepemilikan naskah video untuk reporter dan membatasi izin publish/delete khusus untuk peran `editor` dan `superadmin`. File `src/utils/rbac.ts` diperbarui untuk mengenali rute `/batutv-control/videos`.
    - Verifikasi: `npx tsc --noEmit` (0 errors).
+
+## Progres Terverifikasi Fase 5 (Taksonomi: Categories, Tags & Archives)
+1. **Sub-Task 0 (Audit Taksonomi & Rules)**:
+   - Mengaudit struktur data `AdminCategory` dan `AdminTag` warisan (mendukung `parentId`, `contentTypes` untuk cross-domain news/video, dan status `active` | `inactive`).
+   - Mengonfirmasi bahwa `firestore.rules` mengizinkan `read: if true` tanpa filter status (D-022); penegakan status aktif (`status == 'active'`) didelegasikan mutlak ke query repository aplikasi.
+   - Mengaudit komponen arsip warisan (`CategoryArchivePage.tsx` dan `TagArchivePage.tsx`) untuk di-porting ke arsitektur App Router.
+2. **Sub-Task 1 (Repository, Schema, & Server Actions Taksonomi)**:
+   - `src/features/taxonomy/schemas.ts`: Skema validasi Zod lengkap (`adminCategorySchema`, `adminTagSchema`, `categoryContentTypeSchema`, `tagContentTypeSchema`).
+   - `src/features/taxonomy/data/adminFirestoreTaxonomyRepository.ts`: Repository 2-tier menggunakan Firebase Admin SDK dengan fallback graceful ke in-memory store (`categoryAdminStore.ts` & `tagAdminStore.ts`).
+   - `src/features/taxonomy/actions.ts`: Server Actions CRUD aman dengan verifikasi sesi httpOnly cookie `__session` dan penegakan role RBAC (`superadmin` dan `editor`):
+     - `createCategoryAction`, `updateCategoryAction`, `deleteCategoryAction`, `bulkUpdateCategoriesAction`, `getAdminCategoriesAction`.
+     - `createTagAction`, `updateTagAction`, `deleteTagAction`, `bulkUpdateTagsAction`, `getAdminTagsAction`.
+3. **Sub-Task 2 (Routing Publik & Halaman Arsip)**:
+   - Data Fetching 2-Tier: `src/features/taxonomy/data/liveFirestoreTaxonomyService.ts` (`fetchActiveCategoriesLive`, `fetchCategoryBySlugLive`, `fetchActiveTagsLive`, `fetchTagBySlugLive`) mengimplementasikan filter `where('status', '==', 'active')` dan penanganan 404 ketat (`notFound()`).
+   - Halaman Arsip Kategori: `src/app/(portal)/kategori/[slug]/page.tsx` dengan metadata dinamis, OpenGraph, breadcrumbs, navigasi sub-kategori/parent, etalase artikel berita, kartu video terkait, dan widget sidebar terpopuler (SSG ter-generate untuk seluruh slug kategori aktif).
+   - Halaman Arsip Tag: `src/app/(portal)/tag/[slug]/page.tsx` dengan metadata dinamis, OpenGraph, tab filtering multi-konten (Semua, Berita, Video), dan rekomendasi tag populer (SSG ter-generate untuk seluruh slug tag aktif).
+   - Dynamic Sitemap: Kategori dan tag aktif didaftarkan otomatis di `src/app/sitemap.ts`.
+4. **Sub-Task 3 (Admin Dashboard Taxonomy & Route Normalization)**:
+   - Normalisasi Rute: URL panel admin diselaraskan ke bahasa Inggris standar: `/batutv-control/categories` dan `/batutv-control/tags`.
+   - Modul Admin: `CategoryManagementModule.tsx` dan `TagManagementModule.tsx` terintegrasi penuh dengan Server Actions dan verifikasi role RBAC.
+   - Graceful Redirect: `src/app/(dashboard)/batutv-control/kategori/page.tsx` dan `/tag/page.tsx` mengalihkan navigasi secara permanen ke rute baru untuk menjaga backward-compatibility.
+   - Navigasi & Shell: `Sidebar.tsx` dan `DashboardLayout.tsx` diperbarui untuk mengenali rute dan judul baru.
+5. **Sub-Task 4 (Integrasi dengan Form Editor Artikel & Video)**:
+   - Komponen Universal: Dibuat `src/components/admin/common/TaxonomyTagInput.tsx` dengan fitur input chip, autocomplete interaktif, filter tipe konten, dan tombol saran instan 1-klik.
+   - Integrasi Berita (`NewsEditorView.tsx`): Dropdown kategori live sync dengan master Firestore aktif (`contentTypes.includes('news')`), tagar terhubung ke `TaxonomyTagInput`, dan payload simpan otomatis menyertakan `categoryId` serta `categorySlug`.
+   - Integrasi Video (`VideoEditorView.tsx`): Dropdown kategori live sync dengan master Firestore aktif (`contentTypes.includes('video')`), kata kunci terhubung ke `TaxonomyTagInput`, dan payload simpan otomatis menyertakan `categoryId` serta `categorySlug`.
+   - Schema Sync: Interface `AdminArticle` dan `AdminVideo` pada `src/types/admin.ts` diperkaya dengan field opsional `categoryId?: string`.
+6. **Sub-Task 5 (Dokumentasi & Standarisasi Arsitektur)**:
+   - Keputusan arsitektur D-022, D-023, dan D-024 dicatat secara resmi di `DECISIONS.md`.
+   - `CURRENT-STATUS.md` diperbarui menandai Fase 5 selesai 100%.
 
 ## Catatan Kredensial Firebase Admin Service Account (Prasyarat CI/CD & Production Build)
 Untuk pipeline CI/CD produksi mandiri penuh di luar sandbox:
