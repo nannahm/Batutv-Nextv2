@@ -37,10 +37,10 @@
 - [ ] Auth session hooks & provider
 
 ### Fase 4 — Videos & Media Library
-- [ ] Port `IVideoRepository` & `IMediaRepository` to `features/videos/` and `features/media/`
-- [ ] Video schemas, server actions, YouTube parser & thumbnail utilities
-- [ ] Public Video page & player modal: `app/(portal)/video/`
-- [ ] Admin Video & Media management: `app/(dashboard)/batutv-control/videos/` and `media/`
+- [x] Port `IVideoRepository` & `IMediaRepository` to `features/videos/` and `features/media/`
+- [x] Video schemas, server actions, YouTube parser & thumbnail utilities
+- [x] Public Video page & player modal: `app/(portal)/video/`
+- [x] Admin Video & Media management: `app/(dashboard)/batutv-control/videos/` and `media/`
 
 ### Fase 5 — Taxonomy (Categories & Tags)
 - [ ] Port `ICategoryRepository` & `ITagRepository`

@@ -27,7 +27,7 @@ basis kode yang ada, mengikuti panduan migrasi di `ARCHITECTURE.md` dan `DECISIO
 | **Fase 1** | Fondasi (Next.js 16, App Router Root, ESLint, Firestore SDK, UI) | 🟢 Selesai | 100% |
 | **Fase 2** | Articles (Pilot Domain - Repository, Schemas, Actions, SSR Pages, Admin) | 🟢 Selesai | 100% |
 | **Fase 3** | Authentication & RBAC (httpOnly Cookies, Middleware Guard, Custom Claims) | 🟢 Selesai | 100% |
-| **Fase 4** | Videos & Media (YouTube Integration, Player, Storage) | 🟡 Berjalan (Sub-Task 2) | 50% |
+| **Fase 4** | Videos & Media (YouTube Integration, Player, Storage) | 🟢 Selesai | 100% |
 | **Fase 5** | Taksonomi (Categories, Tags, Archive Routing) | ⚪ Belum Dimulai | 0% |
 | **Fase 6** | Pages, Navigation, Settings, Users (Static Pages, Menus, Sync) | ⚪ Belum Dimulai | 0% |
 | **Fase 7** | Cutover, 23 Audit Scripts, Final Cleanup | ⚪ Belum Dimulai | 0% |
@@ -106,6 +106,22 @@ basis kode yang ada, mengikuti panduan migrasi di `ARCHITECTURE.md` dan `DECISIO
    - `src/features/videos/components/VideoSkeleton.tsx`: State pemuatan skeleton untuk kartu dan grid video.
    - Pembersihan Dead Code: Folder rintisan lama `src/features/video/` (singular) yang tidak digunakan telah dibersihkan secara tuntas.
    - Verifikasi: `npx tsc --noEmit` (0 errors) & `compile_applet` (berhasil).
+4. **Sub-Task 3 (Routing Publik Video: Katalog & Detail)**:
+   - Data Fetching 2-Tier: `src/features/videos/data/liveFirestoreVideoService.ts` (`fetchPublishedVideosLive` dan `fetchVideoBySlugLive`) mengimplementasikan query live Firestore (`status == 'published'`) dengan fallback graceful ke seed data.
+   - Halaman Katalog Publik: `src/app/(portal)/video/page.tsx` dengan metadata dinamis, OpenGraph, BreadcrumbList schema, Bento Grid, dan Video Catalog berfitur pencarian real-time dan penyaringan kategori.
+   - Halaman Detail Publik: `src/app/(portal)/video/[slug]/page.tsx` dengan `generateMetadata()`, JSON-LD `VideoObject` terstruktur, breadcrumb navigasi, VideoPlayer interaktif dengan lazy-loading embed YouTube, counter tayangan, panel bagikan (WhatsApp, Twitter, Facebook, salin tautan), deskripsi lengkap, tag topik, serta etalase video rekomendasi terkait.
+   - Client Interactivity: Komponen `src/components/video/ClientVideoDetailWrapper.tsx` menangani state play interaktif, toast notifikasi share, dan copy tautan tanpa merusak SSR Next.js.
+   - Dynamic Sitemap: Rute `/video` dan seluruh slug video publik terdaftar dinamis pada `src/app/sitemap.ts`.
+   - Kebijakan Live Streaming: Sesuai instruksi produk, fitur live streaming di-skip total (tidak ada rute `/video/live`, tombol live di bento diganti badge 'Segera Hadir').
+   - Verifikasi: `npx tsc --noEmit` (0 errors), build lulus bersih.
+5. **Sub-Task 4 (Admin Dashboard Videos & Media, Route Normalization & RBAC Hardening)**:
+   - Normalisasi Rute: Seluruh rute internal admin diselaraskan secara konsisten ke bentuk plural standar `/batutv-control/videos`.
+   - Update Komponen Admin: Rute video pada `VideoManagementModule.tsx`, `Sidebar.tsx`, `DashboardLayout.tsx`, `DashboardPage.tsx`, dan `StatisticsCards.tsx` dinormalisasi ke `/batutv-control/videos` dengan backward-compatibility transisi.
+   - Routing Admin Videos: `src/app/(dashboard)/batutv-control/videos/page.tsx` terintegrasi dengan modul manajemen video di bawah proteksi 3-layer guard (`middleware.ts` Edge cookie check, `layout.tsx` cryptographic session verification, dan client mount session).
+   - Graceful Redirect: `src/app/(dashboard)/batutv-control/video/page.tsx` mengalihkan navigasi rute singular secara permanen ke `/batutv-control/videos`.
+   - Routing Admin Media: `src/app/(dashboard)/batutv-control/media/page.tsx` mengintegrasikan `MediaManagementModule` dengan proteksi 3-layer guard yang sama.
+   - RBAC Hardening: Server Actions (`src/features/videos/actions.ts`) memvalidasi kepemilikan naskah video untuk reporter dan membatasi izin publish/delete khusus untuk peran `editor` dan `superadmin`. File `src/utils/rbac.ts` diperbarui untuk mengenali rute `/batutv-control/videos`.
+   - Verifikasi: `npx tsc --noEmit` (0 errors).
 
 ## Catatan Kredensial Firebase Admin Service Account (Prasyarat CI/CD & Production Build)
 Untuk pipeline CI/CD produksi mandiri penuh di luar sandbox:
