@@ -40,13 +40,13 @@ export function VideoBentoGrid({
 
         <div className="flex items-center gap-2">
           {showLiveButton && (
-            <Link
-              href="/video/live"
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-white bg-red-600 hover:bg-red-700 rounded-full transition-all shadow-sm active:scale-95 cursor-pointer"
+            <span
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-neutral-500 dark:text-neutral-400 bg-neutral-100 dark:bg-neutral-800 rounded-full select-none cursor-default"
+              title="Siaran langsung akan segera hadir"
             >
-              <Tv className="w-3.5 h-3.5 animate-pulse" />
-              <span>LIVE STREAMING</span>
-            </Link>
+              <Tv className="w-3.5 h-3.5 text-neutral-400" />
+              <span>LIVE (SEGERA HADIR)</span>
+            </span>
           )}
 
           <Link

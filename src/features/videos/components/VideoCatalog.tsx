@@ -87,13 +87,13 @@ export function VideoCatalog({ initialVideos, categories = [] }: VideoCatalogPro
               <option value="popular">Terpopuler</option>
             </select>
 
-            <Link
-              href="/video/live"
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 text-sm font-bold text-white bg-red-600 hover:bg-red-700 rounded-lg transition shadow-xs"
+            <span
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 text-sm font-semibold text-neutral-400 dark:text-neutral-500 bg-neutral-100 dark:bg-neutral-800 rounded-lg select-none cursor-default"
+              title="Live streaming segera hadir"
             >
-              <Tv className="w-4 h-4" />
-              <span className="hidden sm:inline">Live Stream</span>
-            </Link>
+              <Tv className="w-4 h-4 text-neutral-400" />
+              <span className="hidden sm:inline">Live Stream (Segera Hadir)</span>
+            </span>
           </div>
         </div>
 
