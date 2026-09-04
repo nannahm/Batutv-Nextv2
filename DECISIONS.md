@@ -248,3 +248,24 @@
   - Satu sistem peran tunggal yang seragam dari token klaim Firebase Auth, cookie sesi SSR, hingga penyimpanan dokumen database Firestore.
   - Menghilangkan ambiguitas pemetaan peran pada UI formulir dan pengelolaan staf redaksi.
   - Kompatibilitas mundur tetap terlindungi secara aman selama proses transisi migrasi data.
+
+### D-027: Adopsi Proaktif Arsitektur Dua-Jalur (Client Store vs Server SDK) dan Proteksi Reserved Slug Root Rute
+- **Status**: Diterima
+- **Tanggal**: 2026-09-04 (Fase 6 Inisiasi & Sub-Task 1)
+- **Konteks**:
+  1. Pengalaman Fase 5 membuktikan bahwa mengimpor Server Actions (`'use server'`) langsung ke dalam komponen admin SPA (`'use client'`) memicu error runtime browser `Class extends value undefined` akibat kebocoran modul Node.js Server (`firebase-admin`).
+  2. Domain Fase 6 (Pages, Navigation, Settings/Footer, Users) memiliki struktur komponen admin SPA interaktif yang sudah stabil (`PageManagementModule.tsx`, `NavigationManagementModule.tsx`, dll). Menghubungkan Server Actions ke komponen-komponen ini beresiko mengulang siklus bug blank screen yang sama.
+  3. Dynamic single-segment route di root `src/app/(portal)/[slug]/page.tsx` memiliki potensi tabrakan routing dengan rute literal sistem lainnya (`video`, `kategori`, `tag`, `berita`, `login`, `batutv-control`, `api`, `sitemap.xml`, dll).
+- **Keputusan**:
+  1. **Adopsi Proaktif Pola D-025 untuk Fase 6**:
+     - Komponen admin SPA (`*ManagementModule.tsx` / client views) secara murni dan konsisten menggunakan **Client Store + Firestore Client SDK + rules-based RBAC** (`pagesAdminStore.ts`, `navigationStore.ts`, `siteSettingsStore.ts`, `userAdminStore.ts`). Dilarang mengimpor Server Actions ke komponen-komponen admin ini.
+     - Server Actions (`'use server'`) dan Firebase Admin SDK (`liveFirestore*Service.ts`) HANYA dibangun untuk kebutuhan SSR portal publik (seperti `generateMetadata()`, `generateStaticParams()`, atau rute data fetching server murni pada `src/app/(portal)/[slug]/page.tsx`).
+  2. **Proteksi Reserved Slugs**:
+     - Menetapkan daftar kata terlarang sistem (`RESERVED_PAGE_SLUGS`) dan memvalidasinya secara ketat menggunakan Zod schema (`pageSchema`) serta fungsi helper pembentukan slug:
+       `['video', 'kategori', 'tag', 'login', 'berita', 'batutv-control', 'api', 'sitemap.xml', 'robots.txt', 'favicon.ico', 'categories', 'tags', 'videos', 'dashboard', 'authors', 'penulis', 'media', 'pengaturan', 'settings']`.
+     - Slug pada formulir pembuatan/edit halaman wajib divalidasi agar tidak boleh sama dengan kata kunci terlarang ini, mencegah rute catch-all menimpa rute literal Next.js.
+- **Konsekuensi**:
+  - Mencegah timbulnya bug runtime `Class extends value undefined` sejak awal di seluruh modul Fase 6.
+  - Menjaga kebersihan bundler klien Vite/Next.js tanpa resiko kebocoran modul Node.js.
+  - Mencegah konflik rute pada level dynamic catch-all single-segment root Next.js.
+

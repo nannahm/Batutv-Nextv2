@@ -12,7 +12,7 @@ import {
   ExternalLink,
 } from 'lucide-react';
 import { AdminPage, PageStatus, AdminMedia } from '../../../types/admin';
-import { generatePageSlug, generateUniquePageSlug, isPageSlugUnique, getStoredPages } from '../../../data/pagesAdminStore';
+import { generatePageSlug, generateUniquePageSlug, isPageSlugUnique, getStoredPages, isReservedPageSlug } from '../../../data/pagesAdminStore';
 import { PageRichEditor } from './PageRichEditor';
 import { MediaPickerModal } from '../media/MediaPickerModal';
 
@@ -120,10 +120,9 @@ export const PageFormModal: React.FC<PageFormModalProps> = ({
     if (!cleanSlugCandidate) {
       errs.slug = 'Slug URL halaman wajib diisi.';
     } else {
-      // Check reserved system prefixes
-      const reservedPrefixes = ['berita', 'video', 'kategori', 'tag', 'batutv-control', 'api'];
-      if (reservedPrefixes.includes(cleanSlugCandidate)) {
-        errs.slug = `Slug "/${cleanSlugCandidate}" merupakan kata kunci sistem yang dilindungi. Silakan gunakan slug lain.`;
+      // Check reserved system prefixes / words
+      if (isReservedPageSlug(cleanSlugCandidate)) {
+        errs.slug = `Slug "/${cleanSlugCandidate}" merupakan kata kunci rute sistem yang dilindungi. Silakan gunakan slug lain.`;
       } else if (!isPageSlugUnique(cleanSlugCandidate, initialData?.id)) {
         const allPages = getStoredPages();
         const conflictPage = allPages.find(

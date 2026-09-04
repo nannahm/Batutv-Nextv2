@@ -82,7 +82,7 @@ export const AccessDeniedModule: React.FC<AccessDeniedModuleProps> = ({
               <div className="p-2.5 rounded-xl bg-white border border-slate-200">
                 <span className="text-slate-400 font-medium block text-[10px]">Role Akun Anda Saat Ini:</span>
                 <span className="font-extrabold text-slate-900 flex items-center gap-1.5 mt-0.5">
-                  <span className={`w-2 h-2 rounded-full ${roleKey === 'admin' ? 'bg-red-500' : roleKey === 'redaksi' ? 'bg-rose-500' : roleKey === 'editor' ? 'bg-amber-500' : roleKey === 'reporter' ? 'bg-blue-500' : 'bg-emerald-500'}`} />
+                  <span className={`w-2 h-2 rounded-full ${roleKey === 'superadmin' || roleKey === 'admin' ? 'bg-red-500' : roleKey === 'redaksi' || roleKey === 'editor' ? 'bg-amber-500' : roleKey === 'reporter' || roleKey === 'kontributor' ? 'bg-blue-500' : 'bg-emerald-500'}`} />
                   {roleInfo?.name || user?.role || 'Pengguna'}
                 </span>
               </div>

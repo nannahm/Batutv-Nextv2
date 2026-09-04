@@ -1,6 +1,9 @@
 import { AdminPage, PageStatus } from '../types/admin';
 import { initialAdminPagesData } from './pagesAdminDummyData';
 import { firestorePageRepository } from '../repositories/firestore/firestorePageRepository';
+import { isReservedPageSlug, RESERVED_PAGE_SLUGS } from '../features/pages/schemas';
+
+export { RESERVED_PAGE_SLUGS, isReservedPageSlug };
 
 const PAGES_STORAGE_KEY = 'batutv_admin_pages';
 export const PAGES_UPDATED_EVENT = 'batutv_pages_updated';
@@ -127,11 +130,12 @@ export function getPublishedPages(): AdminPage[] {
 }
 
 /**
- * Check if a slug is uniquely available
+ * Check if a slug is uniquely available and not a reserved system slug
  */
 export function isPageSlugUnique(slug: string, currentId?: string): boolean {
   const clean = slug.toLowerCase().trim().replace(/^\/+|\/+$/g, '');
   if (!clean) return false;
+  if (isReservedPageSlug(clean)) return false;
   const all = getStoredPages();
   return !all.some((p) => p.slug.toLowerCase() === clean && p.id !== currentId);
 }
@@ -181,13 +185,17 @@ export function getPageById(id: string): AdminPage | undefined {
  * Generate a guaranteed unique slug for a page
  */
 export function generateUniquePageSlug(title: string, currentId?: string): string {
-  const baseSlug = generatePageSlug(title) || 'halaman-informasi';
+  let baseSlug = generatePageSlug(title) || 'halaman-informasi';
+  if (isReservedPageSlug(baseSlug)) {
+    baseSlug = `${baseSlug}-page`;
+  }
   const all = getStoredPages();
   
   let candidate = baseSlug;
   let counter = 1;
 
   while (
+    isReservedPageSlug(candidate) ||
     all.some((p) => p.slug.toLowerCase() === candidate.toLowerCase() && p.id !== currentId)
   ) {
     counter++;

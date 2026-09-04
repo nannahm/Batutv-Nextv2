@@ -14,7 +14,7 @@ import { db } from '../../lib/firebase';
 import { CMSUser, UserRole, UserStatus } from '../../types/user';
 import { IUserRepository, UserQueryOptions } from '../IUserRepository';
 import { sanitizeForFirestore } from './converterUtils';
-import { INITIAL_CMS_USERS } from '../../data/userAdminStore';
+import { INITIAL_CMS_USERS } from '../../data/initialUsers';
 import { toCanonicalRole } from '../../types/user';
 
 const USERS_COLLECTION = 'users';
@@ -200,21 +200,31 @@ export class FirestoreUserRepository implements IUserRepository {
     onNext: (users: CMSUser[]) => void,
     onError?: (error: Error) => void
   ): () => void {
-    const colRef = collection(db, USERS_COLLECTION);
-    return onSnapshot(
-      colRef,
-      (snap) => {
-        const list: CMSUser[] = [];
-        snap.forEach((docSnap) => {
-          list.push(fromUserFirestoreDocument(docSnap.id, docSnap.data()));
-        });
-        onNext(list);
-      },
-      (err) => {
-        console.warn('[FirestoreUserRepository] subscription error:', err);
-        if (onError) onError(err);
-      }
-    );
+    if (!db) {
+      console.warn('[FirestoreUserRepository] db instance is not available');
+      return () => {};
+    }
+    try {
+      const colRef = collection(db, USERS_COLLECTION);
+      return onSnapshot(
+        colRef,
+        (snap) => {
+          const list: CMSUser[] = [];
+          snap.forEach((docSnap) => {
+            list.push(fromUserFirestoreDocument(docSnap.id, docSnap.data()));
+          });
+          onNext(list);
+        },
+        (err) => {
+          console.warn('[FirestoreUserRepository] subscription error:', err);
+          if (onError) onError(err);
+        }
+      );
+    } catch (err) {
+      console.warn('[FirestoreUserRepository] subscribe setup error:', err);
+      if (onError && err instanceof Error) onError(err);
+      return () => {};
+    }
   }
 }
 

@@ -9,7 +9,7 @@ import { db } from '../../lib/firebase';
 import { SiteSettings } from '../../types/siteSettings';
 import { ISiteSettingsRepository } from '../ISiteSettingsRepository';
 import { sanitizeForFirestore } from './converterUtils';
-import { INITIAL_SITE_SETTINGS } from '../../data/siteSettingsStore';
+import { INITIAL_SITE_SETTINGS } from '../../data/initialSiteSettings';
 
 const COLLECTION_NAME = 'site_settings';
 const PRIMARY_DOC_ID = 'default';
@@ -113,19 +113,29 @@ export class FirestoreSiteSettingsRepository implements ISiteSettingsRepository 
     onNext: (settings: SiteSettings) => void,
     onError?: (error: Error) => void
   ): () => void {
-    const docRef = doc(db, COLLECTION_NAME, PRIMARY_DOC_ID);
-    return onSnapshot(
-      docRef,
-      (snap) => {
-        if (snap.exists()) {
-          onNext(fromSiteSettingsFirestoreDocument(snap.data()));
+    if (!db) {
+      console.warn('[FirestoreSiteSettingsRepository] db instance is not available');
+      return () => {};
+    }
+    try {
+      const docRef = doc(db, COLLECTION_NAME, PRIMARY_DOC_ID);
+      return onSnapshot(
+        docRef,
+        (snap) => {
+          if (snap.exists()) {
+            onNext(fromSiteSettingsFirestoreDocument(snap.data()));
+          }
+        },
+        (err) => {
+          console.warn('[FirestoreSiteSettingsRepository] subscription error:', err);
+          if (onError) onError(err);
         }
-      },
-      (err) => {
-        console.warn('[FirestoreSiteSettingsRepository] subscription error:', err);
-        if (onError) onError(err);
-      }
-    );
+      );
+    } catch (err) {
+      console.warn('[FirestoreSiteSettingsRepository] subscribe setup error:', err);
+      if (onError && err instanceof Error) onError(err);
+      return () => {};
+    }
   }
 }
 

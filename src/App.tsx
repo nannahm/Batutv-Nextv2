@@ -146,21 +146,23 @@ export default function App() {
           let userRole = claimRole || 'admin';
 
           try {
-            const userSnap = await getDoc(doc(db, 'users', fbUser.uid));
-            if (userSnap.exists()) {
-              const uData = userSnap.data();
-              userName = uData.fullName || uData.name || userName;
-              userRole = uData.role || userRole;
-            } else {
-              const adminSnap = await getDoc(doc(db, 'admins', fbUser.uid));
-              if (adminSnap.exists()) {
-                const aData = adminSnap.data();
-                userName = aData.fullName || aData.name || userName;
-                userRole = aData.role || userRole;
+            if (db && fbUser?.uid) {
+              const userSnap = await getDoc(doc(db, 'users', fbUser.uid));
+              if (userSnap.exists()) {
+                const uData = userSnap.data();
+                userName = uData.fullName || uData.name || userName;
+                userRole = uData.role || userRole;
+              } else {
+                const adminSnap = await getDoc(doc(db, 'admins', fbUser.uid));
+                if (adminSnap.exists()) {
+                  const aData = adminSnap.data();
+                  userName = aData.fullName || aData.name || userName;
+                  userRole = aData.role || userRole;
+                }
               }
             }
-          } catch {
-            // ignore
+          } catch (err) {
+            console.warn('[App] Error fetching user profile from Firestore:', err);
           }
 
           const formattedRole =

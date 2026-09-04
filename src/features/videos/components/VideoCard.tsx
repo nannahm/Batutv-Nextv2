@@ -14,7 +14,6 @@ export function VideoCard({ video, onPlayQuick, compact = false }: VideoCardProp
     <article className="group flex flex-col bg-white dark:bg-neutral-900 rounded-xl overflow-hidden border border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700 transition-all duration-300 hover:shadow-md">
       {/* Thumbnail Container */}
       <div className="relative aspect-video bg-neutral-950 overflow-hidden">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={video.thumbnailUrl}
           alt={video.title}

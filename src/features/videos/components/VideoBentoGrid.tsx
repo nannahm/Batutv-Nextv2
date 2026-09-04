@@ -128,7 +128,6 @@ export function VideoBentoGrid({
               >
                 <div className="group flex gap-3 p-2 rounded-lg bg-neutral-50 dark:bg-neutral-800/50 hover:bg-neutral-100 dark:hover:bg-neutral-800 border border-neutral-200/60 dark:border-neutral-800 transition">
                   <div className="relative w-28 sm:w-32 aspect-video bg-neutral-900 rounded overflow-hidden flex-shrink-0">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={video.thumbnailUrl}
                       alt={video.title}

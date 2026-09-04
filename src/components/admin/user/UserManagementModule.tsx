@@ -450,7 +450,7 @@ export const UserManagementModule: React.FC<UserManagementModuleProps> = ({
               userToDelete.email.toLowerCase() === (currentUser as any).email.toLowerCase()
           )
         }
-        isLastAdmin={Boolean(userToDelete?.role === 'admin' && stats.admins <= 1)}
+        isLastAdmin={Boolean((userToDelete?.role === 'superadmin' || userToDelete?.role === 'admin') && stats.admins <= 1)}
       />
 
       <RolePermissionMatrixModal

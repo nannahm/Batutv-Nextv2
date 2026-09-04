@@ -9,7 +9,7 @@ import { db } from '../../lib/firebase';
 import { FooterConfig } from '../../types/footer';
 import { IFooterRepository } from '../IFooterRepository';
 import { sanitizeForFirestore } from './converterUtils';
-import { INITIAL_FOOTER_CONFIG } from '../../data/footerAdminStore';
+import { INITIAL_FOOTER_CONFIG } from '../../data/initialFooterConfig';
 
 const COLLECTION_NAME = 'footer';
 const PRIMARY_DOC_ID = 'config';
@@ -102,19 +102,29 @@ export class FirestoreFooterRepository implements IFooterRepository {
     onNext: (config: FooterConfig) => void,
     onError?: (error: Error) => void
   ): () => void {
-    const docRef = doc(db, COLLECTION_NAME, PRIMARY_DOC_ID);
-    return onSnapshot(
-      docRef,
-      (snap) => {
-        if (snap.exists()) {
-          onNext(fromFooterFirestoreDocument(snap.data()));
+    if (!db) {
+      console.warn('[FirestoreFooterRepository] db instance is not available');
+      return () => {};
+    }
+    try {
+      const docRef = doc(db, COLLECTION_NAME, PRIMARY_DOC_ID);
+      return onSnapshot(
+        docRef,
+        (snap) => {
+          if (snap.exists()) {
+            onNext(fromFooterFirestoreDocument(snap.data()));
+          }
+        },
+        (err) => {
+          console.warn('[FirestoreFooterRepository] subscription error:', err);
+          if (onError) onError(err);
         }
-      },
-      (err) => {
-        console.warn('[FirestoreFooterRepository] subscription error:', err);
-        if (onError) onError(err);
-      }
-    );
+      );
+    } catch (err) {
+      console.warn('[FirestoreFooterRepository] subscribe setup error:', err);
+      if (onError && err instanceof Error) onError(err);
+      return () => {};
+    }
   }
 }
 

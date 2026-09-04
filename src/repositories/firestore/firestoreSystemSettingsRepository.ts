@@ -29,7 +29,7 @@ import {
   DEFAULT_MAINTENANCE_CONFIG,
   DEFAULT_SECURITY_CONFIG,
   DEFAULT_CACHE_STATS,
-} from '../../data/systemSettingsStore';
+} from '../../data/initialSystemSettings';
 
 const COLLECTION_NAME = 'system_settings';
 const LOGS_COLLECTION_NAME = 'activity_logs';
@@ -222,103 +222,134 @@ export class FirestoreSystemSettingsRepository implements ISystemSettingsReposit
     onNext: (snapshot: SystemSettingsSnapshot) => void,
     onError?: (error: Error) => void
   ): () => void {
-    const infoRef = doc(db, COLLECTION_NAME, 'info');
-    const maintenanceRef = doc(db, COLLECTION_NAME, 'maintenance');
-    const securityRef = doc(db, COLLECTION_NAME, 'security');
+    if (!db) {
+      console.warn('[FirestoreSystemSettingsRepository] db instance is not available');
+      return () => {};
+    }
 
-    let currentSnapshot: SystemSettingsSnapshot = {};
+    try {
+      const infoRef = doc(db, COLLECTION_NAME, 'info');
+      const maintenanceRef = doc(db, COLLECTION_NAME, 'maintenance');
+      const securityRef = doc(db, COLLECTION_NAME, 'security');
 
-    const unsubInfo = onSnapshot(
-      infoRef,
-      (snap) => {
-        if (snap.exists()) {
-          currentSnapshot = {
-            ...currentSnapshot,
-            info: { ...DEFAULT_SYSTEM_INFO, ...snap.data() },
-          };
-          onNext(currentSnapshot);
-        }
-      },
-      onError
-    );
+      let currentSnapshot: SystemSettingsSnapshot = {};
 
-    const unsubMaint = onSnapshot(
-      maintenanceRef,
-      (snap) => {
-        if (snap.exists()) {
-          currentSnapshot = {
-            ...currentSnapshot,
-            maintenance: { ...DEFAULT_MAINTENANCE_CONFIG, ...snap.data() },
-          };
-          onNext(currentSnapshot);
-        }
-      },
-      onError
-    );
+      const unsubInfo = onSnapshot(
+        infoRef,
+        (snap) => {
+          if (snap.exists()) {
+            currentSnapshot = {
+              ...currentSnapshot,
+              info: { ...DEFAULT_SYSTEM_INFO, ...snap.data() },
+            };
+            onNext(currentSnapshot);
+          }
+        },
+        onError
+      );
 
-    const unsubSec = onSnapshot(
-      securityRef,
-      (snap) => {
-        if (snap.exists()) {
-          currentSnapshot = {
-            ...currentSnapshot,
-            security: { ...DEFAULT_SECURITY_CONFIG, ...snap.data() },
-          };
-          onNext(currentSnapshot);
-        }
-      },
-      onError
-    );
+      const unsubMaint = onSnapshot(
+        maintenanceRef,
+        (snap) => {
+          if (snap.exists()) {
+            currentSnapshot = {
+              ...currentSnapshot,
+              maintenance: { ...DEFAULT_MAINTENANCE_CONFIG, ...snap.data() },
+            };
+            onNext(currentSnapshot);
+          }
+        },
+        onError
+      );
 
-    return () => {
-      unsubInfo();
-      unsubMaint();
-      unsubSec();
-    };
+      const unsubSec = onSnapshot(
+        securityRef,
+        (snap) => {
+          if (snap.exists()) {
+            currentSnapshot = {
+              ...currentSnapshot,
+              security: { ...DEFAULT_SECURITY_CONFIG, ...snap.data() },
+            };
+            onNext(currentSnapshot);
+          }
+        },
+        onError
+      );
+
+      return () => {
+        unsubInfo();
+        unsubMaint();
+        unsubSec();
+      };
+    } catch (err) {
+      console.warn('[FirestoreSystemSettingsRepository] subscribe setup error:', err);
+      if (onError && err instanceof Error) onError(err);
+      return () => {};
+    }
   }
 
   subscribeMaintenance(
     onNext: (config: MaintenanceConfig) => void,
     onError?: (error: Error) => void
   ): () => void {
-    const docRef = doc(db, COLLECTION_NAME, 'maintenance');
-    return onSnapshot(
-      docRef,
-      (snap) => {
-        if (snap.exists()) {
-          onNext({
-            ...DEFAULT_MAINTENANCE_CONFIG,
-            ...snap.data(),
-          });
+    if (!db) {
+      console.warn('[FirestoreSystemSettingsRepository] db instance is not available');
+      return () => {};
+    }
+    try {
+      const docRef = doc(db, COLLECTION_NAME, 'maintenance');
+      return onSnapshot(
+        docRef,
+        (snap) => {
+          if (snap.exists()) {
+            onNext({
+              ...DEFAULT_MAINTENANCE_CONFIG,
+              ...snap.data(),
+            });
+          }
+        },
+        (err) => {
+          console.warn('[FirestoreSystemSettingsRepository] subscribeMaintenance error:', err);
+          if (onError) onError(err);
         }
-      },
-      (err) => {
-        console.warn('[FirestoreSystemSettingsRepository] subscribeMaintenance error:', err);
-        if (onError) onError(err);
-      }
-    );
+      );
+    } catch (err) {
+      console.warn('[FirestoreSystemSettingsRepository] subscribeMaintenance setup error:', err);
+      if (onError && err instanceof Error) onError(err);
+      return () => {};
+    }
   }
 
   subscribeSecurity(
     onNext: (config: SecurityConfig) => void,
     onError?: (error: Error) => void
   ): () => void {
-    const docRef = doc(db, COLLECTION_NAME, 'security');
-    return onSnapshot(
-      docRef,
-      (snap) => {
-        if (snap.exists()) {
-          onNext({
-            ...DEFAULT_SECURITY_CONFIG,
-            ...snap.data(),
-          });
+    if (!db) {
+      console.warn('[FirestoreSystemSettingsRepository] db instance is not available');
+      return () => {};
+    }
+    try {
+      const docRef = doc(db, COLLECTION_NAME, 'security');
+      return onSnapshot(
+        docRef,
+        (snap) => {
+          if (snap.exists()) {
+            onNext({
+              ...DEFAULT_SECURITY_CONFIG,
+              ...snap.data(),
+            });
+          }
+        },
+        (err) => {
+          console.warn('[FirestoreSystemSettingsRepository] subscribeSecurity error:', err);
+          if (onError) onError(err);
         }
-      },
-      (err) => {
-        console.warn('[FirestoreSystemSettingsRepository] subscribeSecurity error:', err);
-        if (onError) onError(err);
-      }
-    );
+      );
+    } catch (err) {
+      console.warn('[FirestoreSystemSettingsRepository] subscribeSecurity setup error:', err);
+      if (onError && err instanceof Error) onError(err);
+      return () => {};
+    }
   }
 }
 

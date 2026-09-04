@@ -54,19 +54,21 @@ export const LoginPage: React.FC<LoginPageProps> = ({
       let userRole = 'admin';
 
       try {
-        const userDocRef = doc(db, 'users', fbUser.uid);
-        const userSnap = await getDoc(userDocRef);
-        if (userSnap.exists()) {
-          const uData = userSnap.data();
-          userName = uData.fullName || uData.name || userName;
-          userRole = uData.role || userRole;
-        } else {
-          const adminDocRef = doc(db, 'admins', fbUser.uid);
-          const adminSnap = await getDoc(adminDocRef);
-          if (adminSnap.exists()) {
-            const aData = adminSnap.data();
-            userName = aData.fullName || aData.name || userName;
-            userRole = aData.role || userRole;
+        if (db && fbUser?.uid) {
+          const userDocRef = doc(db, 'users', fbUser.uid);
+          const userSnap = await getDoc(userDocRef);
+          if (userSnap.exists()) {
+            const uData = userSnap.data();
+            userName = uData.fullName || uData.name || userName;
+            userRole = uData.role || userRole;
+          } else {
+            const adminDocRef = doc(db, 'admins', fbUser.uid);
+            const adminSnap = await getDoc(adminDocRef);
+            if (adminSnap.exists()) {
+              const aData = adminSnap.data();
+              userName = aData.fullName || aData.name || userName;
+              userRole = aData.role || userRole;
+            }
           }
         }
       } catch (err) {
@@ -134,19 +136,21 @@ export const LoginPage: React.FC<LoginPageProps> = ({
 
       // Check Firestore /users or /admins doc for detailed metadata
       try {
-        const userDocRef = doc(db, 'users', fbUser.uid);
-        const userSnap = await getDoc(userDocRef);
-        if (userSnap.exists()) {
-          const uData = userSnap.data();
-          userName = uData.fullName || uData.name || userName;
-          userRole = uData.role || userRole;
-        } else {
-          const adminDocRef = doc(db, 'admins', fbUser.uid);
-          const adminSnap = await getDoc(adminDocRef);
-          if (adminSnap.exists()) {
-            const aData = adminSnap.data();
-            userName = aData.fullName || aData.name || userName;
-            userRole = aData.role || userRole;
+        if (db && fbUser?.uid) {
+          const userDocRef = doc(db, 'users', fbUser.uid);
+          const userSnap = await getDoc(userDocRef);
+          if (userSnap.exists()) {
+            const uData = userSnap.data();
+            userName = uData.fullName || uData.name || userName;
+            userRole = uData.role || userRole;
+          } else {
+            const adminDocRef = doc(db, 'admins', fbUser.uid);
+            const adminSnap = await getDoc(adminDocRef);
+            if (adminSnap.exists()) {
+              const aData = adminSnap.data();
+              userName = aData.fullName || aData.name || userName;
+              userRole = aData.role || userRole;
+            }
           }
         }
       } catch (docErr) {

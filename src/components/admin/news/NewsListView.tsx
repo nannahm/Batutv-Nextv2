@@ -30,7 +30,13 @@ import {
   Lock,
 } from 'lucide-react';
 import { AdminArticle, ArticleStatus, AdminUser } from '../../../types/admin';
-import { canRolePublish, normalizeUserRole } from '../../../utils/rbac';
+import {
+  canRolePublish,
+  canRolePermanentDelete,
+  canRoleManageHeadlines,
+  canRoleTrashPublished,
+  normalizeUserRole,
+} from '../../../utils/rbac';
 import { NewsPreviewModal } from './NewsPreviewModal';
 
 interface NewsListViewProps {
@@ -74,9 +80,9 @@ export const NewsListView: React.FC<NewsListViewProps> = ({
 }) => {
   const userRole = normalizeUserRole(currentUser?.role);
   const canPublish = canRolePublish(currentUser?.role);
-  const canManageHeadline = userRole === 'admin' || userRole === 'redaksi';
-  const canPermanentDeleteRole = userRole === 'admin';
-  const canTrashPublished = userRole === 'admin' || userRole === 'redaksi' || userRole === 'editor';
+  const canManageHeadline = canRoleManageHeadlines(currentUser?.role);
+  const canPermanentDeleteRole = canRolePermanentDelete(currentUser?.role);
+  const canTrashPublished = canRoleTrashPublished(currentUser?.role);
   // Search & Filter State
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');

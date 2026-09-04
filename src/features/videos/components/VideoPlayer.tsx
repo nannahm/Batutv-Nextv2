@@ -55,7 +55,6 @@ export function VideoPlayer({
           aria-label={`Putar video: ${title}`}
         >
           {/* Poster Image */}
-          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={thumbnailUrl}
             alt={title}

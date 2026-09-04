@@ -25,7 +25,7 @@ import {
 import { AdminArticle, ArticleStatus, AdminMedia, AdminUser, AdminCategory } from '../../../types/admin';
 import { getStoredCategories, CATEGORIES_UPDATED_EVENT } from '../../../data/categoryAdminStore';
 import { getActiveAuthors } from '../../../data/authorAdminStore';
-import { checkArticleEditPermission, canRolePublish, normalizeUserRole } from '../../../utils/rbac';
+import { checkArticleEditPermission, canRolePublish, canRoleManageHeadlines, normalizeUserRole } from '../../../utils/rbac';
 import { NewsRichEditor } from './NewsRichEditor';
 import { NewsPreviewModal } from './NewsPreviewModal';
 import { MediaPickerModal } from '../media/MediaPickerModal';
@@ -79,7 +79,7 @@ export const NewsEditorView: React.FC<NewsEditorViewProps> = ({
   const canPublish = canRolePublish(currentUser?.role);
   const editPermission = checkArticleEditPermission(currentUser?.role, initialArticle, currentUser);
   const isReadOnly = editPermission.isReadOnly;
-  const isHeadlineAllowed = userRole === 'admin' || userRole === 'redaksi';
+  const isHeadlineAllowed = canRoleManageHeadlines(currentUser?.role);
 
   // Form State
   const [title, setTitle] = useState(initialArticle?.title || '');

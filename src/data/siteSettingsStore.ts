@@ -4,113 +4,12 @@ import {
   SupportedFont,
 } from '../types/siteSettings';
 import { firestoreSiteSettingsRepository } from '../repositories/firestore/firestoreSiteSettingsRepository';
+import { INITIAL_SITE_SETTINGS } from './initialSiteSettings';
+
+export { INITIAL_SITE_SETTINGS };
 
 export const SITE_SETTINGS_STORAGE_KEY = 'batutv_site_settings';
 export const SITE_SETTINGS_UPDATED_EVENT = 'batutv_site_settings_updated';
-
-export const INITIAL_SITE_SETTINGS: SiteSettings = {
-  identity: {
-    siteName: 'BATUTV',
-    tagline: 'Portal Berita Batu Raya',
-    siteDescription:
-      'Portal Berita Terkini, Akurat, dan Terpercaya Seputar Kota Batu, Malang Raya, Jawa Timur, Nasional, Ekonomi, Politik, dan Siaran TV Streaming - BatuTV.',
-    mainDomain: 'https://batutv.com',
-  },
-  logos: {
-    headerDesktop: '/brand/batutv-logo.svg',
-    headerDesktopAlt: 'BatuTV Inspirasi Untuk Negeri - Header Logo Desktop',
-    navbarCompact: '',
-    navbarCompactAlt: 'BatuTV Compact Navbar Badge Logo',
-    headerMobile: '/brand/batutv-logo.svg',
-    headerMobileAlt: 'BatuTV Mobile Logo',
-    footer: '/brand/batutv-logo.svg',
-    footerAlt: 'BatuTV Media Network Footer Logo',
-    darkMode: '/brand/batutv-logo-dark.svg',
-    darkModeAlt: 'BatuTV Dark Mode Logo',
-    publisherSchema: '/brand/batutv-logo-publisher.png',
-    publisherSchemaAlt: 'BatuTV Publisher Schema Logo 600x60',
-  },
-  favicon: {
-    faviconUrl: '/favicon.svg',
-    faviconAlt: 'BatuTV Official Favicon Icon',
-  },
-  colors: {
-    primary: '#D6001C',
-    secondary: '#111827',
-    accent: '#F59E0B',
-    background: '#F8FAFC',
-  },
-  typography: {
-    headingFont: 'Outfit' as SupportedFont,
-    bodyFont: 'Plus Jakarta Sans' as SupportedFont,
-    headingWeight: '800',
-    bodyWeight: '400',
-    fontSizeScale: 'normal',
-    topicBar: {
-      fontSize: 11,
-      fontWeight: '400',
-      fontFamily: 'inherit',
-      textTransform: 'none',
-      badgePadding: 'normal',
-      badgeBgColor: '#f1f3f5',
-      badgeTextColor: '#334155',
-    },
-    navigation: {
-      fontSize: 12.5,
-      fontWeight: '900',
-      letterSpacing: 'wide',
-      textTransform: 'uppercase',
-    },
-    footerMenu: {
-      fontSize: 13,
-      fontWeight: '700',
-      gap: 'normal',
-      textColor: '#ffffff',
-      hoverColor: '#ef4444',
-    },
-  },
-  seo: {
-    defaultSiteTitle: 'BatuTV | Portal Berita Terkini, Daerah Batu, Nasional & Video',
-    defaultMetaDescription:
-      'Portal Berita Terkini, Akurat, dan Terpercaya Seputar Kota Batu, Malang Raya, Jawa Timur, Nasional, Ekonomi, Politik, dan Siaran TV Streaming - BatuTV.',
-    defaultKeywords:
-      'BatuTV, berita kota batu, portal berita batu, malang raya, jawa timur, berita terkini, berita nasional, video berita, live streaming batu tv',
-    defaultOgImage:
-      'https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=1200&auto=format&fit=crop&q=80',
-    defaultOgImageAlt: 'BatuTV Official Open Graph Social Image',
-  },
-  publisher: {
-    companyName: 'PT Batu Televisi Indonesia',
-    publisherName: 'Redaksi BatuTV',
-    fullAddress: 'Jl. TVRI No. 1, Oro-Oro Ombo, Kec. Batu',
-    city: 'Kota Batu',
-    province: 'Jawa Timur',
-    postalCode: '65316',
-    editorialEmail: 'redaksi@batutv.com',
-    businessEmail: 'iklan@batutv.com',
-    phoneNumber: '+62 341 591234',
-    whatsApp: '+62 812 3456 7890',
-  },
-  socialMedia: {
-    facebook: 'https://facebook.com/batutvofficial',
-    instagram: 'https://instagram.com/batutv_official',
-    youtube: 'https://youtube.com/@batutv_official',
-    tiktok: 'https://tiktok.com/@batutv_official',
-    twitter: 'https://twitter.com/batutv_official',
-    telegram: 'https://t.me/batutv_news',
-    linkedin: 'https://linkedin.com/company/batutv',
-  },
-  verification: {
-    googleSearchConsole: 'google-site-verification-batutv-official-2026',
-    googleAnalyticsId: 'G-BATUTV2026',
-    googleTagManagerId: 'GTM-BTV9988',
-    metaPixelId: '1029384756',
-    customHeaderScript: '',
-    customFooterScript: '',
-  },
-  updatedAt: '2026-08-29T00:00:00.000Z',
-  updatedBy: 'Redaksi BatuTV',
-};
 
 // In-Memory state for instant UI rendering & synchronization
 let inMemorySiteSettings: SiteSettings = loadLocalCache();

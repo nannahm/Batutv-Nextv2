@@ -3,6 +3,9 @@ import { getStoredAuthors } from './authorAdminStore';
 import { logSystemActivity, getStoredSecurityConfig } from './systemSettingsStore';
 import { AdminUser } from '../types/admin';
 import { firestoreUserRepository } from '../repositories/firestore/firestoreUserRepository';
+import { INITIAL_CMS_USERS } from './initialUsers';
+
+export { INITIAL_CMS_USERS };
 
 export const USER_STORAGE_KEY = 'batutv_cms_users';
 export const USER_UPDATED_EVENT = 'batutv_users_updated';
@@ -171,260 +174,6 @@ export const ROLE_PERMISSIONS_MATRIX: Record<UserRole, RolePermissionDetail> = {
     workflowNotes: 'Kontributor → Draft Submission → Editor Review & Fact Check → Publish.',
   },
 };
-
-// Initial Seed Users mapped to Author Master Data (Canonical Roles: superadmin | editor | reporter)
-export const INITIAL_CMS_USERS: CMSUser[] = [
-  {
-    id: 'usr-000',
-    fullName: 'Dzaky Inne (Owner/Super Admin)',
-    username: 'dzakyinne',
-    email: 'dzakyinne@gmail.com',
-    password: 'Password@123',
-    role: 'superadmin',
-    status: 'aktif',
-    lastLogin: '2026-09-01T08:00:00.000Z',
-    lastLoginDetails: {
-      browser: 'Chrome (Web)',
-      device: 'Admin Console',
-      ipAddress: '127.0.0.1',
-      status: 'success',
-      timestamp: '2026-09-01T08:00:00.000Z',
-    },
-    createdAt: '2026-01-01T00:00:00.000Z',
-    updatedAt: '2026-09-01T08:00:00.000Z',
-    authorId: 'aut-001',
-    authorName: 'Dzaky Inne',
-    forcePasswordChange: false,
-    failedLoginAttempts: 0,
-    sessionsCount: 1,
-    notes: 'Pemilik Sistem & Super Administrator Utama BatuTV',
-  },
-  {
-    id: 'usr-001',
-    fullName: 'Ahmad Fauzi, S.I.Kom',
-    username: 'ahmad.fauzi',
-    email: 'ahmad.fauzi@batutv.id',
-    password: 'Password@123',
-    role: 'superadmin',
-    status: 'aktif',
-    lastLogin: '2026-08-29T18:45:00.000Z',
-    lastLoginDetails: {
-      browser: 'Chrome 128.0 (macOS)',
-      device: 'MacBook Pro Apple Silicon',
-      ipAddress: '103.144.12.89',
-      status: 'success',
-      timestamp: '2026-08-29T18:45:00.000Z',
-    },
-    createdAt: '2026-01-10T08:00:00.000Z',
-    updatedAt: '2026-08-29T18:45:00.000Z',
-    authorId: 'aut-001',
-    authorName: 'Ahmad Fauzi',
-    forcePasswordChange: false,
-    failedLoginAttempts: 0,
-    sessionsCount: 1,
-    notes: 'Akun Super Administrator Utama IT & Redaksi BatuTV',
-  },
-  {
-    id: 'usr-002',
-    fullName: 'Budi Santoso, M.I.Kom',
-    username: 'budi.redaksi',
-    email: 'budi.santoso@batutv.id',
-    password: 'Password@123',
-    role: 'editor',
-    status: 'aktif',
-    lastLogin: '2026-08-29T17:15:00.000Z',
-    lastLoginDetails: {
-      browser: 'Chrome 128.0 (Windows 11)',
-      device: 'Desktop Newsroom BatuTV',
-      ipAddress: '114.122.38.10',
-      status: 'success',
-      timestamp: '2026-08-29T17:15:00.000Z',
-    },
-    createdAt: '2026-01-01T07:00:00.000Z',
-    updatedAt: '2026-08-29T17:15:00.000Z',
-    authorId: 'aut-009',
-    authorName: 'Budi Santoso',
-    forcePasswordChange: false,
-    failedLoginAttempts: 0,
-    sessionsCount: 1,
-    notes: 'Pemimpin Redaksi BatuTV Media',
-  },
-  {
-    id: 'usr-003',
-    fullName: 'Sinta Rahmawati',
-    username: 'sinta.editor',
-    email: 'sinta.rahma@batutv.id',
-    password: 'Password@123',
-    role: 'editor',
-    status: 'aktif',
-    lastLogin: '2026-08-29T16:20:00.000Z',
-    lastLoginDetails: {
-      browser: 'Firefox 129.0 (Windows)',
-      device: 'Lenovo ThinkPad Redaksi',
-      ipAddress: '180.252.19.44',
-      status: 'success',
-      timestamp: '2026-08-29T16:20:00.000Z',
-    },
-    createdAt: '2026-01-12T09:15:00.000Z',
-    updatedAt: '2026-08-29T16:20:00.000Z',
-    authorId: 'aut-002',
-    authorName: 'Sinta Rahma',
-    forcePasswordChange: false,
-    failedLoginAttempts: 0,
-    sessionsCount: 1,
-    notes: 'Editor Senior Rubrik Ekonomi & Pemerintahan',
-  },
-  {
-    id: 'usr-004',
-    fullName: 'Dimas Pratama',
-    username: 'dimas.reporter',
-    email: 'dimas.pratama@batutv.id',
-    password: 'Password@123',
-    role: 'reporter',
-    status: 'aktif',
-    lastLogin: '2026-08-29T14:10:00.000Z',
-    lastLoginDetails: {
-      browser: 'Mobile Safari 17.5 (iOS)',
-      device: 'iPhone 15 Pro Liputan',
-      ipAddress: '114.124.90.11',
-      status: 'success',
-      timestamp: '2026-08-29T14:10:00.000Z',
-    },
-    createdAt: '2026-02-01T10:00:00.000Z',
-    updatedAt: '2026-08-29T14:10:00.000Z',
-    authorId: 'aut-003',
-    authorName: 'Dimas Pratama',
-    forcePasswordChange: false,
-    failedLoginAttempts: 0,
-    sessionsCount: 1,
-    notes: 'Reporter Lapangan Olahraga & Komunitas',
-  },
-  {
-    id: 'usr-005',
-    fullName: 'Rina Wulandari',
-    username: 'rina.redaksi',
-    email: 'rina.wulandari@batutv.id',
-    password: 'Password@123',
-    role: 'editor',
-    status: 'aktif',
-    lastLogin: '2026-08-28T19:30:00.000Z',
-    lastLoginDetails: {
-      browser: 'Chrome 128.0 (macOS)',
-      device: 'MacBook Air M2',
-      ipAddress: '103.144.12.89',
-      status: 'success',
-      timestamp: '2026-08-28T19:30:00.000Z',
-    },
-    createdAt: '2026-01-05T07:30:00.000Z',
-    updatedAt: '2026-08-28T19:30:00.000Z',
-    authorId: 'aut-004',
-    authorName: 'Rina Wulandari',
-    forcePasswordChange: false,
-    failedLoginAttempts: 0,
-    sessionsCount: 1,
-    notes: 'Dewan Redaksi BatuTV',
-  },
-  {
-    id: 'usr-006',
-    fullName: 'Dewi Anggraini',
-    username: 'dewi.editor',
-    email: 'dewi.anggraini@batutv.id',
-    password: 'Password@123',
-    role: 'editor',
-    status: 'aktif',
-    lastLogin: '2026-08-29T11:40:00.000Z',
-    lastLoginDetails: {
-      browser: 'Safari 17.5 (iPadOS)',
-      device: 'iPad Pro 11-inch',
-      ipAddress: '125.166.4.15',
-      status: 'success',
-      timestamp: '2026-08-29T11:40:00.000Z',
-    },
-    createdAt: '2026-01-20T09:00:00.000Z',
-    updatedAt: '2026-08-29T11:40:00.000Z',
-    authorId: 'aut-008',
-    authorName: 'Dewi Anggraini',
-    forcePasswordChange: false,
-    failedLoginAttempts: 0,
-    sessionsCount: 1,
-    notes: 'Editor Rubrik Kesehatan & Edukasi',
-  },
-  {
-    id: 'usr-007',
-    fullName: 'Nadia Putri',
-    username: 'nadia.kontributor',
-    email: 'nadia.putri@batutv.id',
-    password: 'Password@123',
-    role: 'reporter',
-    status: 'aktif',
-    lastLogin: '2026-08-27T15:00:00.000Z',
-    lastLoginDetails: {
-      browser: 'Chrome 128.0 (Windows)',
-      device: 'ASUS Vivobook',
-      ipAddress: '182.1.200.55',
-      status: 'success',
-      timestamp: '2026-08-27T15:00:00.000Z',
-    },
-    createdAt: '2026-03-01T08:40:00.000Z',
-    updatedAt: '2026-08-27T15:00:00.000Z',
-    authorId: 'aut-006',
-    authorName: 'Nadia Putri',
-    forcePasswordChange: false,
-    failedLoginAttempts: 0,
-    sessionsCount: 0,
-    notes: 'Kontributor Budaya & Kuliner Khas Batu',
-  },
-  {
-    id: 'usr-008',
-    fullName: 'Arif Setiawan',
-    username: 'arif.foto',
-    email: 'arif.setiawan@batutv.id',
-    password: 'Password@123',
-    role: 'reporter',
-    status: 'nonaktif',
-    lastLogin: '2026-08-10T09:12:00.000Z',
-    lastLoginDetails: {
-      browser: 'Chrome 127.0 (Android)',
-      device: 'Samsung Galaxy S23',
-      ipAddress: '110.138.45.2',
-      status: 'success',
-      timestamp: '2026-08-10T09:12:00.000Z',
-    },
-    createdAt: '2026-04-01T14:00:00.000Z',
-    updatedAt: '2026-08-15T10:00:00.000Z',
-    authorId: 'aut-011',
-    authorName: 'Arif Setiawan',
-    forcePasswordChange: false,
-    failedLoginAttempts: 0,
-    sessionsCount: 0,
-    notes: 'Akun nonaktif sementara - cuti operasional fotografi',
-  },
-  {
-    id: 'usr-009',
-    fullName: 'Fajar Hidayat',
-    username: 'fajar.reporter',
-    email: 'fajar.hidayat@batutv.id',
-    password: 'Password@123',
-    role: 'reporter',
-    status: 'ditangguhkan',
-    lastLogin: '2026-08-22T08:30:00.000Z',
-    lastLoginDetails: {
-      browser: 'Firefox 129.0 (Linux)',
-      device: 'Ubuntu Workstation',
-      ipAddress: '103.220.10.99',
-      status: 'failed',
-      timestamp: '2026-08-22T08:30:00.000Z',
-    },
-    createdAt: '2026-02-15T11:20:00.000Z',
-    updatedAt: '2026-08-22T08:30:00.000Z',
-    authorId: 'aut-005',
-    authorName: 'Fajar Hidayat',
-    forcePasswordChange: true,
-    failedLoginAttempts: 4,
-    sessionsCount: 0,
-    notes: 'Akun ditangguhkan oleh Administrator karena percobaan login mencurigakan',
-  },
-];
 
 // In-Memory state for instant UI rendering and synchronous helper lookups
 let inMemoryUsers: CMSUser[] = loadLocalCache();
@@ -1002,9 +751,9 @@ export const deleteUser = (
     };
   }
 
-  // Safety: Prevent deleting the last active Administrator
-  const adminUsers = users.filter((u) => u.role === 'admin' && u.status === 'aktif');
-  if (target.role === 'admin' && adminUsers.length <= 1) {
+  // Safety: Prevent deleting the last active Administrator / Super Administrator
+  const adminUsers = users.filter((u) => (u.role === 'superadmin' || u.role === 'admin') && u.status === 'aktif');
+  if ((target.role === 'superadmin' || target.role === 'admin') && adminUsers.length <= 1) {
     return {
       success: false,
       error: 'Tidak dapat menghapus akun Administrator ini karena merupakan satu-satunya Admin aktif di sistem.',
@@ -1129,9 +878,12 @@ export const toggleUserSuspend = (
 
   const newStatus: UserStatus = user.status === 'ditangguhkan' ? 'aktif' : 'ditangguhkan';
 
-  // Safety check: Cannot suspend the last admin
-  if (newStatus === 'ditangguhkan' && user.role === 'admin') {
-    const activeAdmins = users.filter((u) => u.role === 'admin' && u.status === 'aktif' && u.id !== id);
+  // Safety check: Cannot suspend the last admin / superadmin
+  const isTargetAdmin = user.role === 'superadmin' || user.role === 'admin';
+  if (newStatus === 'ditangguhkan' && isTargetAdmin) {
+    const activeAdmins = users.filter(
+      (u) => (u.role === 'superadmin' || u.role === 'admin') && u.status === 'aktif' && u.id !== id
+    );
     if (activeAdmins.length === 0) {
       return {
         success: false,

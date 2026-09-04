@@ -79,6 +79,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onLogout,
 }) => {
   const roleKey = normalizeUserRole(user?.role);
+  const isSuperAdmin = roleKey === 'superadmin' || roleKey === 'admin';
+  const isEditor = roleKey === 'editor' || roleKey === 'redaksi';
+  const isReporter = roleKey === 'reporter' || roleKey === 'kontributor';
+  const isEditorOrHigher = isSuperAdmin || isEditor;
 
   // Live counts for news, video, category, media, tag, and author badge indicators
   const [counts, setCounts] = useState(() => getArticlesCounts());
@@ -153,30 +157,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   // Dynamic news sub-items per role
   const newsSubItems: SubMenuItem[] = (() => {
-    if (roleKey === 'kontributor') {
-      return [
-        {
-          name: 'Tulis Naskah Baru',
-          path: '/batutv-control/berita/tulis',
-          icon: FilePlus,
-        },
-        {
-          name: 'Draft Naskah Saya',
-          path: '/batutv-control/berita/draft',
-          icon: FileText,
-          badge: counts.draft > 0 ? counts.draft : undefined,
-          badgeColor: 'bg-amber-500/20 text-amber-300 border-amber-500/30',
-        },
-        {
-          name: 'Semua Naskah',
-          path: '/batutv-control/berita',
-          icon: List,
-          badge: counts.all,
-        },
-      ];
-    }
-
-    if (roleKey === 'reporter') {
+    if (isReporter) {
       return [
         {
           name: 'Semua Berita',
@@ -206,7 +187,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       ];
     }
 
-    // Admin, Redaksi, Editor
+    // Admin, Redaksi, Editor, Super Admin
     return [
       {
         name: 'Semua Berita',
@@ -275,7 +256,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     // 1. KONTEN SECTION
     const kontenItems: MenuItem[] = [
       {
-        name: roleKey === 'kontributor' ? 'Naskah Tulisan' : 'Berita',
+        name: isReporter ? 'Naskah Tulisan' : 'Berita',
         path: '/batutv-control/berita',
         icon: Newspaper,
         badge: counts.all.toString(),
@@ -284,8 +265,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
       },
     ];
 
-    // Videos are accessible to Admin, Redaksi, and Editor only
-    if (roleKey === 'admin' || roleKey === 'redaksi' || roleKey === 'editor') {
+    // Videos are accessible to Superadmin, Admin, Redaksi, and Editor
+    if (isEditorOrHigher) {
       kontenItems.push({
         name: 'Video',
         path: '/batutv-control/videos',
@@ -344,7 +325,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     // 2. KONTEN PENDUKUNG SECTION
     const pendukungItems: MenuItem[] = [];
 
-    if (roleKey === 'admin' || roleKey === 'redaksi' || roleKey === 'editor') {
+    if (isEditorOrHigher) {
       pendukungItems.push({
         name: 'Kategori',
         path: '/batutv-control/categories',
@@ -355,14 +336,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
     }
 
     pendukungItems.push({
-      name: roleKey === 'kontributor' ? 'Media Saya' : 'Media',
+      name: isReporter ? 'Media Saya' : 'Media',
       path: '/batutv-control/media',
       icon: FolderOpen,
       badge: mediaCount.toString(),
       isReady: true,
     });
 
-    if (roleKey === 'admin' || roleKey === 'redaksi' || roleKey === 'editor') {
+    if (isEditorOrHigher) {
       pendukungItems.push({
         name: 'Tag',
         path: '/batutv-control/tags',
@@ -382,8 +363,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
     // 3. MASTER DATA SECTION
     const masterItems: MenuItem[] = [];
 
-    // Penulis is visible to Admin, Redaksi, and Editor
-    if (roleKey === 'admin' || roleKey === 'redaksi' || roleKey === 'editor') {
+    // Penulis is visible to Superadmin, Admin, Redaksi, and Editor
+    if (isEditorOrHigher) {
       masterItems.push({
         name: 'Penulis',
         path: '/batutv-control/penulis',
@@ -393,8 +374,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
       });
     }
 
-    // Pages, Navigasi, Footer, Site Settings only for Admin & Redaksi
-    if (roleKey === 'admin' || roleKey === 'redaksi') {
+    // Pages, Navigasi, Footer for Superadmin, Admin, Redaksi, and Editor
+    if (isEditorOrHigher) {
       masterItems.push(
         {
           name: 'Pages',
@@ -415,17 +396,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
           path: '/batutv-control/footer',
           icon: PanelBottom,
           isReady: true,
-        },
-        {
-          name: 'Site Settings',
-          path: '/batutv-control/site-settings',
-          icon: Sliders,
-          isReady: true,
         }
       );
     }
 
-    if (roleKey === 'admin') {
+    // Site Settings only for Superadmin / Admin
+    if (isSuperAdmin) {
+      masterItems.push({
+        name: 'Site Settings',
+        path: '/batutv-control/site-settings',
+        icon: Sliders,
+        isReady: true,
+      });
+    }
+
+    if (isSuperAdmin) {
       masterItems.push({
         name: 'Banner',
         path: '/batutv-control/banner',
@@ -442,8 +427,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
       });
     }
 
-    // 4. PENGATURAN SECTION (Only Admin)
-    if (roleKey === 'admin') {
+    // 4. PENGATURAN SECTION (Super Admin & Admin only)
+    if (isSuperAdmin) {
       sections.push({
         title: 'PENGATURAN',
         items: [
@@ -708,13 +693,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <span className="text-white font-bold truncate block">{user?.name || 'Administrator'}</span>
             </div>
             <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-md border shrink-0 ${
-              roleKey === 'admin' ? 'bg-red-500/10 text-red-400 border-red-500/20' :
+              isSuperAdmin ? 'bg-red-500/10 text-red-400 border-red-500/20' :
               roleKey === 'redaksi' ? 'bg-rose-500/10 text-rose-400 border-rose-500/20' :
               roleKey === 'editor' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' :
-              roleKey === 'reporter' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' :
+              isReporter ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' :
               'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
             }`}>
-              {roleKey.toUpperCase()}
+              {roleKey === 'superadmin' ? 'SUPER ADMIN' : roleKey.toUpperCase()}
             </span>
           </div>
 
