@@ -23,11 +23,13 @@ import {
   Image as ImageIcon,
   UploadCloud,
 } from 'lucide-react';
-import { AdminVideo, VideoStatus, AdminMedia, AdminUser } from '../../../types/admin';
+import { AdminVideo, VideoStatus, AdminMedia, AdminUser, AdminCategory } from '../../../types/admin';
 import { getStoredCategories } from '../../../data/categoryAdminStore';
 import { getActiveAuthors } from '../../../data/authorAdminStore';
 import { getMediaById } from '../../../data/mediaAdminStore';
 import { MediaPickerModal } from '../media/MediaPickerModal';
+import { TaxonomyTagInput } from '../common/TaxonomyTagInput';
+import { getAdminCategoriesAction } from '@/src/features/taxonomy/actions';
 import {
   extractYouTubeVideoId,
   getYouTubeThumbnailUrl,
@@ -95,10 +97,31 @@ export const VideoEditorView: React.FC<VideoEditorViewProps> = ({
   const [category, setCategory] = useState(
     initialVideo?.category || 'Wisata & Kuliner'
   );
+  const [liveCategories, setLiveCategories] = useState<AdminCategory[]>([]);
+
+  // Sync active categories from server
+  useEffect(() => {
+    let isMounted = true;
+    const fetchCats = async () => {
+      try {
+        const res = await getAdminCategoriesAction();
+        if (res.success && res.categories && res.categories.length > 0 && isMounted) {
+          setLiveCategories(res.categories);
+        }
+      } catch {
+        // fallback
+      }
+    };
+    fetchCats();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   // Category & Author dynamic options
   const availableCategories = React.useMemo(() => {
-    const stored = getStoredCategories();
-    const filtered = stored.filter(
+    const baseSource = liveCategories.length > 0 ? liveCategories : getStoredCategories();
+    const filtered = baseSource.filter(
       (c) => c.status === 'active' && c.contentTypes.includes('video')
     );
     if (filtered.length > 0) {
@@ -109,7 +132,7 @@ export const VideoEditorView: React.FC<VideoEditorViewProps> = ({
       return names;
     }
     return DEFAULT_CATEGORIES;
-  }, [category]);
+  }, [category, liveCategories]);
 
   // Master Data Penulis integration
   const availableAuthors = useMemo(() => {
@@ -201,9 +224,12 @@ export const VideoEditorView: React.FC<VideoEditorViewProps> = ({
   const [metaDescription, setMetaDescription] = useState(
     initialVideo?.metaDescription || ''
   );
-  const [tagsInput, setTagsInput] = useState(
-    initialVideo?.tags?.join(', ') || 'Kota Batu, Video Berita'
-  );
+  const [selectedTags, setSelectedTags] = useState<string[]>(() => {
+    if (initialVideo?.tags && Array.isArray(initialVideo.tags)) {
+      return initialVideo.tags;
+    }
+    return ['Kota Batu', 'Video Berita'];
+  });
 
   // Validation State
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -303,10 +329,11 @@ export const VideoEditorView: React.FC<VideoEditorViewProps> = ({
 
     const finalStatus = targetStatus || status;
     const publishedIso = `${publishDate}T${publishTime}:00`;
-    const cleanTags = tagsInput
-      .split(',')
-      .map((t) => t.trim())
-      .filter(Boolean);
+    const allKnownCats = liveCategories.length > 0 ? liveCategories : getStoredCategories();
+    const matchedCategory = allKnownCats.find((c) => c.name === category);
+    const categorySlug = matchedCategory?.slug || category.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    const categoryId = matchedCategory?.id;
+    const cleanTags = selectedTags;
 
     const videoData: AdminVideo = {
       id: initialVideo?.id || `vid-${Date.now()}`,
@@ -323,7 +350,8 @@ export const VideoEditorView: React.FC<VideoEditorViewProps> = ({
       customThumbnailCaption: thumbnailSource === 'custom' ? selectedMediaInfo?.caption : undefined,
       duration: duration.trim() || '03:30',
       category,
-      categorySlug: category.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+      categorySlug,
+      categoryId,
       author,
       authorId,
       status: finalStatus,
@@ -364,7 +392,7 @@ export const VideoEditorView: React.FC<VideoEditorViewProps> = ({
     metaDescription: metaDescription || excerpt,
     canonicalUrl: `https://batutv.id/video/${slug}`,
     views: initialVideo?.views || 0,
-    tags: tagsInput.split(',').map((t) => t.trim()).filter(Boolean),
+    tags: selectedTags,
   };
 
   // Preview Thumbnail URL calculation
@@ -669,21 +697,13 @@ export const VideoEditorView: React.FC<VideoEditorViewProps> = ({
             </div>
 
             {/* Tags Input */}
-            <div className="space-y-1.5">
-              <label className="block text-xs font-bold text-slate-800">
-                Tag & Kata Kunci (Dipisahkan koma)
-              </label>
-              <div className="relative">
-                <Tag className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                <input
-                  type="text"
-                  value={tagsInput}
-                  onChange={(e) => setTagsInput(e.target.value)}
-                  placeholder="Kota Batu, Agrowisata, Apel, Bumiaji"
-                  className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500"
-                />
-              </div>
-            </div>
+            <TaxonomyTagInput
+              tags={selectedTags}
+              onChange={setSelectedTags}
+              contentType="video"
+              label="Tag & Kata Kunci"
+              placeholder="Ketik topik video atau pilih dari saran..."
+            />
           </div>
         </div>
 

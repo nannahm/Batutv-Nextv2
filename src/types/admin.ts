@@ -134,6 +134,7 @@ export interface AdminArticle {
   content: string;
   category: string;
   categorySlug: string;
+  categoryId?: string;
   author: string;
   authorId?: string;
   editor: string;
@@ -172,6 +173,7 @@ export interface AdminVideo {
   duration?: string;
   category: string;
   categorySlug?: string;
+  categoryId?: string;
   author: string;
   authorId?: string;
   status: VideoStatus;
