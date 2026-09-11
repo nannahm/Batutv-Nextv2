@@ -386,7 +386,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         },
         {
           name: 'Navigasi',
-          path: '/batutv-control/navigasi',
+          path: '/batutv-control/navigation',
           icon: FolderTree,
           badge: navCount.toString(),
           isReady: true,

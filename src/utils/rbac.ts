@@ -139,7 +139,7 @@ export const checkRoutePermission = (
     };
   }
 
-  if (path.startsWith('/batutv-control/navigasi')) {
+  if (path.startsWith('/batutv-control/navigation') || path.startsWith('/batutv-control/navigasi')) {
     if (isEditorOrHigher) {
       return { allowed: true, role, moduleName: 'Manajemen Navigasi SO2' };
     }
