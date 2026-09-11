@@ -17,7 +17,7 @@ basis kode yang ada, mengikuti panduan migrasi di `ARCHITECTURE.md` dan `DECISIO
 - **Project**: BatuTV News Portal
 - **Target Framework**: Next.js 16 App Router (Full Stack)
 - **Database**: Firebase Firestore (`batutv-next`)
-- **Last Updated**: 2026-09-03 (Fase 5 Taksonomi Completed)
+- **Last Updated**: 2026-09-10 (Fase 6 Pages, Navigation, Settings, Users Completed)
 
 ## Phase Status Summary
 
@@ -29,7 +29,7 @@ basis kode yang ada, mengikuti panduan migrasi di `ARCHITECTURE.md` dan `DECISIO
 | **Fase 3** | Authentication & RBAC (httpOnly Cookies, Middleware Guard, Custom Claims) | 🟢 Selesai | 100% |
 | **Fase 4** | Videos & Media (YouTube Integration, Player, Storage) | 🟢 Selesai | 100% |
 | **Fase 5** | Taksonomi (Categories, Tags, Archive Routing) | 🟢 Selesai | 100% |
-| **Fase 6** | Pages, Navigation, Settings, Users (Static Pages, Menus, Sync) | 🟡 Sedang Berjalan | 40% |
+| **Fase 6** | Pages, Navigation, Settings, Users (Static Pages, Menus, Sync) | 🟢 Selesai | 100% |
 | **Fase 7** | Cutover, 23 Audit Scripts, Final Cleanup | ⚪ Belum Dimulai | 0% |
 
 ## Progres Terverifikasi Fase 3 (Authentication & RBAC)
@@ -171,6 +171,13 @@ basis kode yang ada, mengikuti panduan migrasi di `ARCHITECTURE.md` dan `DECISIO
    - Normalisasi Rute Admin: Disediakan rute kanonik `/batutv-control/settings`, rute alias redirect `/batutv-control/site-settings`, dan `/batutv-control/footer` yang terintegrasi di Next.js App Router, `Sidebar.tsx`, `DashboardLayout.tsx`, dan `rbac.ts`.
    - Server-Rendered Public Portal: Komponen `src/app/(portal)/layout.tsx` mengambil data live Firestore Admin SDK via `fetchFooterConfigLive()` dan `fetchSiteSettingsLive()`, menghasilkan dynamic root metadata SEO dan me-render komponen `<Footer>` secara SSR dengan fallback graceful ke seed cache.
    - Verifikasi Build: `npm run typecheck` (`0 error`) dan `npx next build --webpack` (104 halaman statis & dinamis ter-generate sukses bersih).
+4. **Sub-Task 4 (Users & RBAC Management)**:
+   - Feature slice `src/features/users/` distandarisasi lengkap dengan validasi Zod (`schemas.ts`), tipe data kanonik (`types.ts`), Firebase Admin SDK repository 2-tier (`data/adminFirestoreUserRepository.ts`), server fetcher (`data/liveFirestoreUserService.ts`), dan Server Actions (`actions.ts`).
+   - Standardisasi Role Kanonik RBAC: Mengunci 3 peran hierarkis (`superadmin` [3], `editor` [2], `reporter` [1]) dengan fungsi normalisasi `toCanonicalRole()` yang menjaga backward-compatibility terhadap data lama (`administrator`, `redaksi`, `kontributor`).
+   - Alur Migrasi Non-Destruktif (D-020): Komponen modal migrasi pengguna (`UserMigrationModal.tsx`) memungkinkan Superadmin menghubungkan akun staf lama (`usr-XXX`) ke UID autentikasi Firebase (`users/{uid}`) secara interaktif di CMS admin.
+   - Client Bridge Pemisahan Bundler: Dibuat `serverActions.client.ts` untuk memisahkan pemanggilan Server Action dari modul Node.js backend (`firebase-admin`), memastikan lingkungan dev Vite tidak membocorkan modul native ke browser bundle.
+   - Integrasi Admin Module & Routing: `UserManagementModule.tsx` terintegrasi pada rute `/batutv-control/users` dan didukung proteksi keamanan sesi kriptografis.
+   - Verifikasi: `npm run typecheck` (0 error) dan `compile_applet` (Build succeeded).
 
 ## Catatan Kredensial Firebase Admin Service Account (Prasyarat CI/CD & Production Build)
 Untuk pipeline CI/CD produksi mandiri penuh di luar sandbox:
@@ -181,7 +188,7 @@ Untuk pipeline CI/CD produksi mandiri penuh di luar sandbox:
 1. Unit testing suite untuk mapper, Zod schema, dan repository.
 2. Pengintegrasian/pemberdayaan `ArticleBentoGrid` & `ArticleSkeleton` di rute portal publik.
 
-## Technical Debt Teridentifikasi (Fase 2 & 4)
+## Technical Debt Teridentifikasi (Fase 2, 4 & 6)
 1. **Penyimpanan Gambar sebagai DataURL Base64 di Firestore (Fase 4)**:
    - *Kondisi*: Dokumen pada koleksi `/media` berpotensi menyimpan string base64 (`data:image/webp;base64,...`) langsung di field `url` bila diunggah via canvas client.
    - *Risiko*: Batas ukuran dokumen Firestore adalah 1MB per dokumen. Base64 menambah overhead ukuran (~33%), dan setiap operasi pembacaan dokumen mentransfer seluruh string base64 sehingga membebani bandwidth/read cost dibanding file URL di CDN/Storage.
@@ -199,6 +206,11 @@ Untuk pipeline CI/CD produksi mandiri penuh di luar sandbox:
    - *Kondisi*: Selama masa transisi migrasi, aplikasi menjalankan Vite dev server (SPA klien dev port 3000) dan Next.js (SSR / App Router). Komponen yang digunakan bersama antar kedua environment (misal komponen atomik/logo visual) memiliki risiko bentrok instance React atau dispatcher mismatch jika mengikat state hook.
    - *Mitigasi Sementara*: Deduplikasi dependensi di `vite.config.ts` (`resolve.dedupe: ['react', 'react-dom']`) serta menjaga komponen presentasional atomik tetap stateless/hookless (D-028).
    - *Penyelesaian Definitif (Fase 7)*: Pemensiunan total SPA legacy (`App.tsx` dan Express `server.ts`) pada Fase 7 (Cutover) sesuai mandat D-004. Mengeliminasi runtime Vite secara penuh akan memusnahkan kelas bug dual-bundler ini secara permanen.
+
+5. **SUPERADMIN_EMAILS hardcoded di setUserRoleAction — sisa pola transisi D-017 yang belum sepenuhnya dihapus**:
+   - *Kondisi*: Pada `setUserRoleAction` (`src/features/auth/serverActions.ts`), whitelist email hardcoded (`SUPERADMIN_EMAILS`) masih digunakan sebagai salah satu penentu akses untuk menjalankan aksi penyematan peran, mendampingi pengecekan custom claim `hasSuperadminClaim`.
+   - *Risiko Operasional*: Ini persis pola transisi D-017 yang sebelumnya ditinggalkan sementara di Fase 3 saat transisi ke custom claims. Jika di masa depan terdapat superadmin baru di luar daftar email hardcoded ini (misalnya pergantian kepemilikan project atau penambahan owner), mereka tidak akan dapat menjalankan `setUserRoleAction` meskipun custom claim mereka sudah `superadmin` — kecuali kode ini di-redeploy manual untuk menambahkan email mereka ke daftar. Kondisi ini bertentangan dengan tujuan arsitektur custom claims yang dirancang agar penambahan dan pencabutan admin tidak memerlukan redeploy kode.
+   - *Rencana Mitigasi*: Rencanakan penghapusan whitelist ini di Fase 7 setelah dipastikan seluruh alur custom claims (`hasSuperadminClaim`) berjalan stabil tanpa perlu fallback email.
 
 
 ## Status Keamanan & Lingkungan Database Firestore (Audit 2026-09-03)
