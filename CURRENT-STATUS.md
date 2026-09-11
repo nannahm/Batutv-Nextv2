@@ -188,6 +188,11 @@ Untuk pipeline CI/CD produksi mandiri penuh di luar sandbox:
 3. **Migrasi Server Fetcher ke Firebase Admin SDK (D-002 Compliance - Selesai di Fase 3)**:
    - Selesai termigrasi ke arsitektur 2-tier murni (Admin SDK -> Static Seed Cache) pada Fase 3.
 
+4. **Risiko Arsitektur Dual-Runtime (Vite SPA + Next.js App Router)**:
+   - *Kondisi*: Selama masa transisi migrasi, aplikasi menjalankan Vite dev server (SPA klien dev port 3000) dan Next.js (SSR / App Router). Komponen yang digunakan bersama antar kedua environment (misal komponen atomik/logo visual) memiliki risiko bentrok instance React atau dispatcher mismatch jika mengikat state hook.
+   - *Mitigasi Sementara*: Deduplikasi dependensi di `vite.config.ts` (`resolve.dedupe: ['react', 'react-dom']`) serta menjaga komponen presentasional atomik tetap stateless/hookless (D-028).
+   - *Penyelesaian Definitif (Fase 7)*: Pemensiunan total SPA legacy (`App.tsx` dan Express `server.ts`) pada Fase 7 (Cutover) sesuai mandat D-004. Mengeliminasi runtime Vite secara penuh akan memusnahkan kelas bug dual-bundler ini secara permanen.
+
 
 ## Status Keamanan & Lingkungan Database Firestore (Audit 2026-09-03)
 - **Status Database**: Project `batutv-next` (`(default)`) adalah **database resmi / riil BatuTV** (berisi data pengguna autentik seperti `dzakyinne@gmail.com`, dewan redaksi, dan artikel berita aktual).
