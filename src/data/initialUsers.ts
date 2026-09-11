@@ -10,6 +10,7 @@ export const INITIAL_CMS_USERS: CMSUser[] = [
     password: 'Password@123',
     role: 'superadmin',
     status: 'aktif',
+    migrationStatus: 'migrated',
     lastLogin: '2026-09-01T08:00:00.000Z',
     lastLoginDetails: {
       browser: 'Chrome (Web)',
@@ -35,6 +36,7 @@ export const INITIAL_CMS_USERS: CMSUser[] = [
     password: 'Password@123',
     role: 'superadmin',
     status: 'aktif',
+    migrationStatus: 'migrated',
     lastLogin: '2026-08-29T18:45:00.000Z',
     lastLoginDetails: {
       browser: 'Chrome 128.0 (macOS)',
@@ -60,6 +62,7 @@ export const INITIAL_CMS_USERS: CMSUser[] = [
     password: 'Password@123',
     role: 'editor',
     status: 'aktif',
+    migrationStatus: 'migrated',
     lastLogin: '2026-08-29T17:15:00.000Z',
     lastLoginDetails: {
       browser: 'Chrome 128.0 (Windows 11)',
@@ -85,6 +88,7 @@ export const INITIAL_CMS_USERS: CMSUser[] = [
     password: 'Password@123',
     role: 'editor',
     status: 'aktif',
+    migrationStatus: 'migrated',
     lastLogin: '2026-08-29T16:20:00.000Z',
     lastLoginDetails: {
       browser: 'Firefox 129.0 (Windows)',
@@ -110,6 +114,7 @@ export const INITIAL_CMS_USERS: CMSUser[] = [
     password: 'Password@123',
     role: 'reporter',
     status: 'aktif',
+    migrationStatus: 'migrated',
     lastLogin: '2026-08-29T14:10:00.000Z',
     lastLoginDetails: {
       browser: 'Mobile Safari 17.5 (iOS)',
@@ -135,6 +140,7 @@ export const INITIAL_CMS_USERS: CMSUser[] = [
     password: 'Password@123',
     role: 'editor',
     status: 'aktif',
+    migrationStatus: 'unmigrated',
     lastLogin: '2026-08-28T19:30:00.000Z',
     lastLoginDetails: {
       browser: 'Chrome 128.0 (macOS)',
@@ -160,6 +166,7 @@ export const INITIAL_CMS_USERS: CMSUser[] = [
     password: 'Password@123',
     role: 'editor',
     status: 'aktif',
+    migrationStatus: 'unmigrated',
     lastLogin: '2026-08-29T11:40:00.000Z',
     lastLoginDetails: {
       browser: 'Safari 17.5 (iPadOS)',
@@ -185,6 +192,7 @@ export const INITIAL_CMS_USERS: CMSUser[] = [
     password: 'Password@123',
     role: 'reporter',
     status: 'aktif',
+    migrationStatus: 'unmigrated',
     lastLogin: '2026-08-27T15:00:00.000Z',
     lastLoginDetails: {
       browser: 'Chrome 128.0 (Windows)',
@@ -210,6 +218,7 @@ export const INITIAL_CMS_USERS: CMSUser[] = [
     password: 'Password@123',
     role: 'reporter',
     status: 'nonaktif',
+    migrationStatus: 'unmigrated',
     lastLogin: '2026-08-10T09:12:00.000Z',
     lastLoginDetails: {
       browser: 'Chrome 127.0 (Android)',
@@ -235,6 +244,7 @@ export const INITIAL_CMS_USERS: CMSUser[] = [
     password: 'Password@123',
     role: 'reporter',
     status: 'ditangguhkan',
+    migrationStatus: 'unmigrated',
     lastLogin: '2026-08-22T08:30:00.000Z',
     lastLoginDetails: {
       browser: 'Firefox 129.0 (Linux)',

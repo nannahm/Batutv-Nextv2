@@ -13,8 +13,9 @@ import {
   Sliders,
   Sparkles,
   Info,
+  Database,
 } from 'lucide-react';
-import { CMSUser, UserFormInput } from '../../../types/user';
+import { CMSUser, UserFormInput, toCanonicalRole } from '../../../types/user';
 import { AdminUser } from '../../../types/admin';
 import {
   getStoredUsers,
@@ -26,6 +27,7 @@ import {
   toggleForcePasswordChange,
   revokeAllUserSessions,
   getUserStats,
+  updateUserMigrationStatus,
   USER_UPDATED_EVENT,
 } from '../../../data/userAdminStore';
 import { UserListView } from './UserListView';
@@ -35,6 +37,7 @@ import { UserResetPasswordModal } from './UserResetPasswordModal';
 import { UserDeleteModal } from './UserDeleteModal';
 import { RolePermissionMatrixModal } from './RolePermissionMatrixModal';
 import { LoginMonitoringModal } from './LoginMonitoringModal';
+import { UserMigrationModal } from './UserMigrationModal';
 
 interface UserManagementModuleProps {
   currentUser?: AdminUser | null;
@@ -68,6 +71,12 @@ export const UserManagementModule: React.FC<UserManagementModuleProps> = ({
 
   const [isMonitoringModalOpen, setIsMonitoringModalOpen] = useState(false);
   const [userToMonitor, setUserToMonitor] = useState<CMSUser | null>(null);
+
+  const [isMigrationModalOpen, setIsMigrationModalOpen] = useState(false);
+  const [userToMigrate, setUserToMigrate] = useState<CMSUser | null>(null);
+
+  // RBAC Superadmin check
+  const isSuperAdmin = currentUser ? toCanonicalRole(currentUser.role) === 'superadmin' : true;
 
   // Toast Notification State
   const [toast, setToast] = useState<{
@@ -239,6 +248,25 @@ export const UserManagementModule: React.FC<UserManagementModuleProps> = ({
     }
   };
 
+  // Handler: Open Migration Confirmation Modal
+  const handleOpenMigration = (user: CMSUser) => {
+    setUserToMigrate(user);
+    setIsMigrationModalOpen(true);
+  };
+
+  // Handler: Execute Confirmed Firebase Auth Migration
+  const handleConfirmMigration = (userId: string, firebaseUid: string) => {
+    const res = updateUserMigrationStatus(userId, 'migrated', firebaseUid, currentUser || undefined);
+    if (res.success) {
+      showToast('Akun berhasil dimigrasikan ke Firebase Auth dengan custom claims peran.', 'success');
+      setIsMigrationModalOpen(false);
+      setUserToMigrate(null);
+      reloadUsers();
+    } else {
+      showToast(res.error || 'Gagal memigrasikan akun ke Firebase Auth.', 'error');
+    }
+  };
+
   return (
     <div id="batutv-user-management-module" className="space-y-6 animate-fadeIn pb-12">
       {/* Toast Feedback */}
@@ -290,8 +318,10 @@ export const UserManagementModule: React.FC<UserManagementModuleProps> = ({
 
           <button
             type="button"
+            disabled={!isSuperAdmin}
             onClick={handleOpenAdd}
-            className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-red-600 hover:bg-red-700 rounded-xl shadow-xs transition-colors"
+            title={!isSuperAdmin ? 'Hanya Super Administrator yang berhak menambah akun atau menetapkan peran' : ''}
+            className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-red-600 hover:bg-red-700 rounded-xl shadow-xs transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <UserPlus className="w-4 h-4" />
             <span>Tambah Pengguna</span>
@@ -307,7 +337,7 @@ export const UserManagementModule: React.FC<UserManagementModuleProps> = ({
             <span className="text-xs text-slate-500 font-medium">Total Akun CMS</span>
             <p className="text-2xl font-black text-slate-900 mt-1">{stats.total}</p>
             <span className="text-[11px] text-slate-400 mt-0.5 block">
-              {stats.admins} Admin • {stats.redaksi} Redaksi
+              {stats.superadmins} Superadmin • {stats.editors} Editor
             </span>
           </div>
           <div className="w-11 h-11 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center flex-shrink-0">
@@ -321,7 +351,7 @@ export const UserManagementModule: React.FC<UserManagementModuleProps> = ({
             <span className="text-xs text-slate-500 font-medium">Pengguna Aktif</span>
             <p className="text-2xl font-black text-emerald-600 mt-1">{stats.active}</p>
             <span className="text-[11px] text-emerald-700 mt-0.5 block">
-              {stats.editors} Editor • {stats.reporters} Reporter
+              {stats.reporters} Reporter • {stats.migrated} Auth Migrated
             </span>
           </div>
           <div className="w-11 h-11 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center flex-shrink-0">
@@ -358,6 +388,28 @@ export const UserManagementModule: React.FC<UserManagementModuleProps> = ({
         </div>
       </div>
 
+      {/* Legacy Accounts Firebase Auth Migration Notice */}
+      {stats.unmigrated > 0 && (
+        <div className="p-4 rounded-2xl bg-amber-50/90 border border-amber-200/90 text-xs text-amber-900 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
+          <div className="flex items-start gap-2.5">
+            <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+            <div className="leading-relaxed">
+              <span className="font-bold">Migrasi Firebase Auth Tertunda:</span> Terdapat{' '}
+              <strong>{stats.unmigrated} akun legacy</strong> (usr-005 s.d. usr-009) berstatus <em>unmigrated</em>. Sesuai kebijakan keamanan, akun tidak dibuatkan kredensial Firebase Auth otomatis tanpa konfirmasi eksplisit administrator.
+            </div>
+          </div>
+          {isSuperAdmin ? (
+            <span className="text-[11px] font-semibold text-amber-800 bg-amber-100 px-3 py-1.5 rounded-lg whitespace-nowrap self-end sm:self-auto border border-amber-300">
+              Gunakan Aksi Kontrol (⋮) → "Migrasi ke Firebase Auth"
+            </span>
+          ) : (
+            <span className="text-[11px] font-semibold text-amber-800/80 bg-amber-100/60 px-3 py-1.5 rounded-lg whitespace-nowrap self-end sm:self-auto">
+              Hanya Superadmin yang berhak memigrasi
+            </span>
+          )}
+        </div>
+      )}
+
       {/* Context Notice on Author Management vs User Management */}
       <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 text-xs text-slate-600 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div className="flex items-start gap-2.5">
@@ -382,6 +434,7 @@ export const UserManagementModule: React.FC<UserManagementModuleProps> = ({
       {/* Main Table List */}
       <UserListView
         users={users}
+        currentUserRole={currentUser?.role}
         onViewDetail={handleOpenDetail}
         onEdit={handleOpenEdit}
         onDelete={handleOpenDelete}
@@ -390,12 +443,14 @@ export const UserManagementModule: React.FC<UserManagementModuleProps> = ({
         onToggleSuspend={handleToggleSuspend}
         onToggleForcePassword={handleToggleForcePassword}
         onRevokeSessions={handleRevokeSessions}
+        onMigrateUser={handleOpenMigration}
       />
 
       {/* Modals */}
       <UserFormModal
         isOpen={isFormModalOpen}
         userToEdit={userToEdit}
+        currentUserRole={currentUser?.role}
         onClose={() => {
           setIsFormModalOpen(false);
           setUserToEdit(null);
@@ -456,6 +511,16 @@ export const UserManagementModule: React.FC<UserManagementModuleProps> = ({
       <RolePermissionMatrixModal
         isOpen={isMatrixModalOpen}
         onClose={() => setIsMatrixModalOpen(false)}
+      />
+
+      <UserMigrationModal
+        isOpen={isMigrationModalOpen}
+        user={userToMigrate}
+        onClose={() => {
+          setIsMigrationModalOpen(false);
+          setUserToMigrate(null);
+        }}
+        onConfirmMigration={handleConfirmMigration}
       />
 
       <LoginMonitoringModal

@@ -14,6 +14,7 @@ import {
   CheckCircle2,
   XCircle,
   AlertTriangle,
+  AlertCircle,
   UserX,
   ChevronLeft,
   ChevronRight,
@@ -22,12 +23,14 @@ import {
   Lock,
   Unlock,
   LogOut,
+  Database,
 } from 'lucide-react';
-import { CMSUser, UserRole, UserStatus } from '../../../types/user';
+import { CMSUser, UserRole, UserStatus, MigrationStatus, toCanonicalRole } from '../../../types/user';
 import { ROLE_PERMISSIONS_MATRIX } from '../../../data/userAdminStore';
 
 interface UserListViewProps {
   users: CMSUser[];
+  currentUserRole?: string;
   onViewDetail: (user: CMSUser) => void;
   onEdit: (user: CMSUser) => void;
   onDelete: (user: CMSUser) => void;
@@ -36,10 +39,12 @@ interface UserListViewProps {
   onToggleSuspend: (userId: string) => void;
   onToggleForcePassword: (userId: string) => void;
   onRevokeSessions: (userId: string) => void;
+  onMigrateUser?: (user: CMSUser) => void;
 }
 
 export const UserListView: React.FC<UserListViewProps> = ({
   users,
+  currentUserRole,
   onViewDetail,
   onEdit,
   onDelete,
@@ -48,14 +53,18 @@ export const UserListView: React.FC<UserListViewProps> = ({
   onToggleSuspend,
   onToggleForcePassword,
   onRevokeSessions,
+  onMigrateUser,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [migrationFilter, setMigrationFilter] = useState<string>('all');
   const [authorRelationFilter, setAuthorRelationFilter] = useState<string>('all');
   const [sortBy, setSortBy] = useState<'name_asc' | 'name_desc' | 'created_desc' | 'created_asc' | 'last_login'>('created_desc');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
+
+  const isSuperAdmin = currentUserRole ? toCanonicalRole(currentUserRole) === 'superadmin' : true;
 
   // Active Action Dropdown index
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null);
@@ -79,21 +88,25 @@ export const UserListView: React.FC<UserListViewProps> = ({
         user.email.toLowerCase().includes(q) ||
         (user.authorName && user.authorName.toLowerCase().includes(q));
 
-      // 2. Role Filter
-      const matchRole = roleFilter === 'all' || user.role === roleFilter;
+      // 2. Role Filter (Canonical 3 Roles)
+      const matchRole = roleFilter === 'all' || toCanonicalRole(user.role) === roleFilter;
 
       // 3. Status Filter
       const matchStatus = statusFilter === 'all' || user.status === statusFilter;
 
-      // 4. Author Relation Filter
+      // 4. Migration Status Filter
+      const userMigration = user.migrationStatus || 'migrated';
+      const matchMigration = migrationFilter === 'all' || userMigration === migrationFilter;
+
+      // 5. Author Relation Filter
       const matchAuthor =
         authorRelationFilter === 'all' ||
         (authorRelationFilter === 'linked' && Boolean(user.authorId)) ||
         (authorRelationFilter === 'unlinked' && !user.authorId);
 
-      return matchSearch && matchRole && matchStatus && matchAuthor;
+      return matchSearch && matchRole && matchStatus && matchMigration && matchAuthor;
     });
-  }, [users, searchQuery, roleFilter, statusFilter, authorRelationFilter]);
+  }, [users, searchQuery, roleFilter, statusFilter, migrationFilter, authorRelationFilter]);
 
   // Sort Logic
   const sortedUsers = useMemo(() => {
@@ -128,6 +141,7 @@ export const UserListView: React.FC<UserListViewProps> = ({
     setSearchQuery('');
     setRoleFilter('all');
     setStatusFilter('all');
+    setMigrationFilter('all');
     setAuthorRelationFilter('all');
     setSortBy('created_desc');
     setCurrentPage(1);
@@ -164,7 +178,7 @@ export const UserListView: React.FC<UserListViewProps> = ({
 
           {/* Filter Selectors Grid */}
           <div className="flex flex-wrap items-center gap-2">
-            {/* Role Filter */}
+            {/* Role Filter - Canonical 3 Roles */}
             <select
               value={roleFilter}
               onChange={(e) => {
@@ -175,11 +189,24 @@ export const UserListView: React.FC<UserListViewProps> = ({
               className="h-10 px-3 rounded-xl border border-slate-200 bg-white text-xs font-medium text-slate-700 focus:outline-none focus:border-red-600 focus:ring-2 focus:ring-red-600/10 shadow-xs capitalize"
             >
               <option value="all">Semua Peran (Role)</option>
-              <option value="admin">Administrator</option>
-              <option value="redaksi">Redaksi</option>
+              <option value="superadmin">Super Administrator</option>
               <option value="editor">Editor</option>
               <option value="reporter">Reporter</option>
-              <option value="kontributor">Kontributor</option>
+            </select>
+
+            {/* Migration Status Filter */}
+            <select
+              value={migrationFilter}
+              onChange={(e) => {
+                setMigrationFilter(e.target.value);
+                setCurrentPage(1);
+              }}
+              aria-label="Filter Status Migrasi"
+              className="h-10 px-3 rounded-xl border border-slate-200 bg-white text-xs font-medium text-slate-700 focus:outline-none focus:border-red-600 focus:ring-2 focus:ring-red-600/10 shadow-xs"
+            >
+              <option value="all">Semua Status Migrasi</option>
+              <option value="migrated">Firebase Auth (Migrated)</option>
+              <option value="unmigrated">Legacy Belum Migrasi (Unmigrated)</option>
             </select>
 
             {/* Status Filter */}
@@ -230,7 +257,7 @@ export const UserListView: React.FC<UserListViewProps> = ({
         </div>
 
         {/* Active Filters Pill Bar */}
-        {(searchQuery || roleFilter !== 'all' || statusFilter !== 'all' || authorRelationFilter !== 'all') && (
+        {(searchQuery || roleFilter !== 'all' || statusFilter !== 'all' || migrationFilter !== 'all' || authorRelationFilter !== 'all') && (
           <div className="flex items-center gap-2 pt-1 flex-wrap text-xs text-slate-600">
             <span className="font-semibold text-slate-500">Filter Aktif:</span>
             {searchQuery && (
@@ -241,6 +268,11 @@ export const UserListView: React.FC<UserListViewProps> = ({
             {roleFilter !== 'all' && (
               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-slate-200 text-slate-700 font-medium capitalize">
                 Role: {roleFilter}
+              </span>
+            )}
+            {migrationFilter !== 'all' && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-slate-200 text-slate-700 font-medium">
+                Migrasi: {migrationFilter === 'migrated' ? 'Migrated' : 'Unmigrated (Legacy)'}
               </span>
             )}
             {statusFilter !== 'all' && (
@@ -272,6 +304,7 @@ export const UserListView: React.FC<UserListViewProps> = ({
               <th className="py-3.5 px-4 sm:px-6">Pengguna CMS</th>
               <th className="py-3.5 px-4">Peran (Role)</th>
               <th className="py-3.5 px-4">Status Akun</th>
+              <th className="py-3.5 px-4">Status Migrasi (Auth)</th>
               <th className="py-3.5 px-4">Relasi Penulis</th>
               <th className="py-3.5 px-4">Login Terakhir</th>
               <th className="py-3.5 px-4 text-right pr-6">Aksi Kontrol</th>
@@ -281,7 +314,7 @@ export const UserListView: React.FC<UserListViewProps> = ({
           <tbody className="divide-y divide-slate-100">
             {paginatedUsers.length === 0 ? (
               <tr>
-                <td colSpan={6} className="py-12 px-4 text-center">
+                <td colSpan={7} className="py-12 px-4 text-center">
                   <div className="max-w-sm mx-auto flex flex-col items-center justify-center text-slate-400">
                     <UserX className="w-10 h-10 mb-2.5 text-slate-300 stroke-[1.5]" />
                     <p className="text-sm font-bold text-slate-700">Tidak ada pengguna ditemukan</p>
@@ -369,6 +402,27 @@ export const UserListView: React.FC<UserListViewProps> = ({
                           className="ml-1.5 inline-block text-[10px] px-1.5 py-0.5 bg-amber-100 text-amber-800 font-bold rounded"
                         >
                           Ganti Pass
+                        </span>
+                      )}
+                    </td>
+
+                    {/* Migration Status (Firebase Auth) Column */}
+                    <td className="py-3.5 px-4 whitespace-nowrap">
+                      {user.migrationStatus === 'unmigrated' ? (
+                        <span
+                          title="Akun legacy belum dimigrasikan ke Firebase Auth"
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-bold rounded-md bg-amber-50 text-amber-800 border border-amber-300"
+                        >
+                          <AlertCircle className="w-3.5 h-3.5 text-amber-600 flex-shrink-0" />
+                          <span>Unmigrated</span>
+                        </span>
+                      ) : (
+                        <span
+                          title="Akun telah tersinkronisasi dengan Firebase Authentication"
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-semibold rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200"
+                        >
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" />
+                          <span>Migrated</span>
                         </span>
                       )}
                     </td>
@@ -477,16 +531,39 @@ export const UserListView: React.FC<UserListViewProps> = ({
                                 className="w-full px-3 py-2 text-left text-slate-700 hover:bg-slate-50 flex items-center gap-2"
                               >
                                 <Edit className="w-3.5 h-3.5 text-slate-400" />
-                                <span>Edit Akun &amp; Role</span>
+                                <span>{isSuperAdmin ? 'Edit Akun & Peran' : 'Lihat / Edit Profil'}</span>
                               </button>
+
+                              {/* Explicit Firebase Auth Migration Trigger */}
+                              {user.migrationStatus === 'unmigrated' && onMigrateUser && (
+                                <button
+                                  type="button"
+                                  disabled={!isSuperAdmin}
+                                  onClick={() => {
+                                    setActiveDropdownId(null);
+                                    onMigrateUser(user);
+                                  }}
+                                  title={
+                                    isSuperAdmin
+                                      ? 'Buka dialog konfirmasi migrasi akun ke Firebase Auth'
+                                      : 'Hanya superadmin yang berhak memigrasikan akun ke Firebase Auth'
+                                  }
+                                  className="w-full px-3 py-2 text-left text-amber-800 hover:bg-amber-50 flex items-center gap-2 font-semibold disabled:opacity-40 disabled:cursor-not-allowed bg-amber-50/50"
+                                >
+                                  <Database className="w-3.5 h-3.5 text-amber-600" />
+                                  <span>Migrasi ke Firebase Auth</span>
+                                </button>
+                              )}
 
                               <button
                                 type="button"
+                                disabled={!isSuperAdmin}
                                 onClick={() => {
                                   setActiveDropdownId(null);
                                   onResetPassword(user);
                                 }}
-                                className="w-full px-3 py-2 text-left text-slate-700 hover:bg-slate-50 flex items-center gap-2"
+                                title={!isSuperAdmin ? 'Hanya superadmin yang berhak mereset password' : ''}
+                                className="w-full px-3 py-2 text-left text-slate-700 hover:bg-slate-50 flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
                               >
                                 <KeyRound className="w-3.5 h-3.5 text-amber-500" />
                                 <span>Reset Kata Sandi</span>
@@ -509,11 +586,13 @@ export const UserListView: React.FC<UserListViewProps> = ({
                               {/* Toggle Suspend */}
                               <button
                                 type="button"
+                                disabled={!isSuperAdmin}
                                 onClick={() => {
                                   setActiveDropdownId(null);
                                   onToggleSuspend(user.id);
                                 }}
-                                className={`w-full px-3 py-2 text-left flex items-center gap-2 ${
+                                title={!isSuperAdmin ? 'Hanya superadmin yang berhak menangguhkan akun' : ''}
+                                className={`w-full px-3 py-2 text-left flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed ${
                                   user.status === 'ditangguhkan'
                                     ? 'text-emerald-700 hover:bg-emerald-50'
                                     : 'text-amber-700 hover:bg-amber-50'
@@ -535,11 +614,13 @@ export const UserListView: React.FC<UserListViewProps> = ({
                               {/* Toggle Force Password Change */}
                               <button
                                 type="button"
+                                disabled={!isSuperAdmin}
                                 onClick={() => {
                                   setActiveDropdownId(null);
                                   onToggleForcePassword(user.id);
                                 }}
-                                className="w-full px-3 py-2 text-left text-slate-700 hover:bg-slate-50 flex items-center gap-2"
+                                title={!isSuperAdmin ? 'Hanya superadmin yang berhak memaksa ganti password' : ''}
+                                className="w-full px-3 py-2 text-left text-slate-700 hover:bg-slate-50 flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
                               >
                                 <AlertTriangle className="w-3.5 h-3.5 text-slate-400" />
                                 <span>
@@ -552,11 +633,13 @@ export const UserListView: React.FC<UserListViewProps> = ({
                               {/* Revoke Sessions */}
                               <button
                                 type="button"
+                                disabled={!isSuperAdmin}
                                 onClick={() => {
                                   setActiveDropdownId(null);
                                   onRevokeSessions(user.id);
                                 }}
-                                className="w-full px-3 py-2 text-left text-slate-700 hover:bg-slate-50 flex items-center gap-2"
+                                title={!isSuperAdmin ? 'Hanya superadmin yang berhak mencabut sesi' : ''}
+                                className="w-full px-3 py-2 text-left text-slate-700 hover:bg-slate-50 flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
                               >
                                 <LogOut className="w-3.5 h-3.5 text-slate-400" />
                                 <span>Logout Semua Sesi</span>
@@ -567,11 +650,13 @@ export const UserListView: React.FC<UserListViewProps> = ({
                               {/* Delete Button */}
                               <button
                                 type="button"
+                                disabled={!isSuperAdmin}
                                 onClick={() => {
                                   setActiveDropdownId(null);
                                   onDelete(user);
                                 }}
-                                className="w-full px-3 py-2 text-left text-red-600 hover:bg-red-50 flex items-center gap-2 font-semibold"
+                                title={!isSuperAdmin ? 'Hanya superadmin yang berhak menghapus akun' : ''}
+                                className="w-full px-3 py-2 text-left text-red-600 hover:bg-red-50 flex items-center gap-2 font-semibold disabled:opacity-40 disabled:cursor-not-allowed"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
                                 <span>Hapus Pengguna</span>

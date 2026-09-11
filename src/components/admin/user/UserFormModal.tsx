@@ -18,7 +18,7 @@ import {
   Layers,
   HelpCircle,
 } from 'lucide-react';
-import { CMSUser, UserFormInput, UserRole, UserStatus } from '../../../types/user';
+import { CMSUser, UserFormInput, UserRole, UserStatus, CanonicalUserRole, toCanonicalRole } from '../../../types/user';
 import {
   getAvailableAuthorsForUser,
   ROLE_PERMISSIONS_MATRIX,
@@ -33,6 +33,7 @@ interface UserFormModalProps {
   onClose: () => void;
   onSave: (data: UserFormInput) => void;
   preselectedAuthorId?: string | null;
+  currentUserRole?: string;
 }
 
 export const UserFormModal: React.FC<UserFormModalProps> = ({
@@ -41,6 +42,7 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
   onClose,
   onSave,
   preselectedAuthorId,
+  currentUserRole,
 }) => {
   const [formData, setFormData] = useState<UserFormInput>({
     authorId: null,
@@ -86,7 +88,7 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
           email: userToEdit.email,
           password: '',
           confirmPassword: '',
-          role: userToEdit.role,
+          role: toCanonicalRole(userToEdit.role),
           status: userToEdit.status,
           forcePasswordChange: Boolean(userToEdit.forcePasswordChange),
         });
@@ -95,7 +97,7 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
         let initialFullName = '';
         let initialEmail = '';
         let initialUsername = '';
-        let initialRole: UserRole = 'reporter';
+        let initialRole: CanonicalUserRole = 'reporter';
 
         if (initialAuthorId) {
           const matched = authors.find((a) => a.id === initialAuthorId);
@@ -103,7 +105,7 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
             initialFullName = matched.name;
             initialEmail = matched.email;
             initialUsername = matched.slug.replace(/[^a-zA-Z0-9._-]/g, '').toLowerCase();
-            initialRole = mapAuthorPositionToRole(matched.position);
+            initialRole = toCanonicalRole(mapAuthorPositionToRole(matched.position));
           }
         }
 
@@ -299,7 +301,7 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
                 onClick={() => {
                   setIsManualStandalone(!isManualStandalone);
                   if (!isManualStandalone) {
-                    setFormData((prev) => ({ ...prev, authorId: null, role: 'admin' }));
+                    setFormData((prev) => ({ ...prev, authorId: null, role: 'superadmin' }));
                   }
                 }}
                 className="text-[11px] font-semibold text-slate-500 hover:text-slate-800 underline flex items-center gap-1"
@@ -487,7 +489,7 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
               <div className="flex items-center justify-between mb-1.5">
                 <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
                   <Shield className="w-4 h-4 text-red-600" />
-                  <span>Peran Pengguna (Role CMS) <span className="text-red-500">*</span></span>
+                  <span>Peran Pengguna (Role CMS Kanonik) <span className="text-red-500">*</span></span>
                 </label>
                 {selectedAuthor && (
                   <span className="text-[11px] text-slate-500">
@@ -497,20 +499,26 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
               </div>
 
               <select
-                value={formData.role}
-                onChange={(e) => setFormData({ ...formData, role: e.target.value as UserRole })}
-                className="w-full h-10 px-3.5 rounded-xl border border-slate-300 text-xs sm:text-sm bg-white font-medium focus:outline-none focus:border-red-600 focus:ring-2 focus:ring-red-600/10 shadow-xs capitalize"
+                value={toCanonicalRole(formData.role)}
+                disabled={Boolean(currentUserRole && toCanonicalRole(currentUserRole) !== 'superadmin')}
+                onChange={(e) => setFormData({ ...formData, role: toCanonicalRole(e.target.value) })}
+                className="w-full h-10 px-3.5 rounded-xl border border-slate-300 text-xs sm:text-sm bg-white font-medium focus:outline-none focus:border-red-600 focus:ring-2 focus:ring-red-600/10 shadow-xs capitalize disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed"
               >
-                <option value="admin">Administrator (Akses Penuh Seluruh Modul &amp; Pengaturan)</option>
-                <option value="redaksi">Redaksi (Pemimpin / Dewan Redaksi - Publish &amp; Layout)</option>
-                <option value="editor">Editor (Penyuntingan Naskah, Approval, &amp; Kurasi)</option>
-                <option value="reporter">Reporter (Tulis Berita Sendiri, Upload Media &amp; Liputan)</option>
-                <option value="kontributor">Kontributor (Draft Submission &amp; Tulisan Kolom)</option>
+                <option value="superadmin">Super Administrator (Akses Penuh Seluruh Modul, Pengguna, &amp; Sistem)</option>
+                <option value="editor">Editor (Penyuntingan Naskah, Approval, Kurasi, &amp; Publikasi Berita)</option>
+                <option value="reporter">Reporter (Tulis Berita Sendiri, Upload Media Liputan, &amp; Simpan Draft)</option>
               </select>
 
+              {currentUserRole && toCanonicalRole(currentUserRole) !== 'superadmin' && (
+                <p className="text-[11px] text-amber-600 mt-1 flex items-center gap-1">
+                  <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+                  <span>Penetapan dan pengubahan peran dibatasi: Hanya Super Administrator yang memiliki wewenang mengelola role.</span>
+                </p>
+              )}
+
               <div className="mt-2 p-2.5 rounded-xl bg-slate-50 border border-slate-200/80 text-xs text-slate-600">
-                <strong className="text-slate-900">{ROLE_PERMISSIONS_MATRIX[formData.role]?.name}:</strong>{' '}
-                {ROLE_PERMISSIONS_MATRIX[formData.role]?.description}
+                <strong className="text-slate-900">{ROLE_PERMISSIONS_MATRIX[toCanonicalRole(formData.role)]?.name || formData.role}:</strong>{' '}
+                {ROLE_PERMISSIONS_MATRIX[toCanonicalRole(formData.role)]?.description}
               </div>
             </div>
           </div>

@@ -13,9 +13,12 @@ import {
   ShieldAlert,
   Activity,
   AlertTriangle,
+  AlertCircle,
+  CheckCircle2,
   Lock,
+  Database,
 } from 'lucide-react';
-import { CMSUser } from '../../../types/user';
+import { CMSUser, toCanonicalRole } from '../../../types/user';
 import { ROLE_PERMISSIONS_MATRIX } from '../../../data/userAdminStore';
 
 interface UserDetailModalProps {
@@ -107,6 +110,27 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
                       ? 'Ditangguhkan'
                       : 'Nonaktif'}
                   </span>
+
+                  {/* Migration Status Badge */}
+                  <span
+                    className={`inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-semibold rounded-full ${
+                      user.migrationStatus === 'unmigrated'
+                        ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
+                        : 'bg-blue-500/20 text-blue-300 border border-blue-500/40'
+                    }`}
+                  >
+                    {user.migrationStatus === 'unmigrated' ? (
+                      <>
+                        <AlertCircle className="w-3 h-3 text-amber-400" />
+                        <span>Unmigrated (Legacy)</span>
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle2 className="w-3 h-3 text-blue-400" />
+                        <span>Firebase Auth Migrated</span>
+                      </>
+                    )}
+                  </span>
                 </div>
               </div>
             </div>
@@ -160,10 +184,16 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
                     {new Date(user.createdAt).toLocaleDateString('id-ID', { dateStyle: 'medium' })}
                   </span>
                 </div>
-                <div className="flex justify-between">
+                <div className="flex justify-between border-b border-slate-200/60 pb-1.5">
                   <span className="text-slate-500">Pembaruan Terakhir:</span>
                   <span className="text-slate-800">
                     {new Date(user.updatedAt).toLocaleDateString('id-ID', { dateStyle: 'medium' })}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-500">Status Migrasi Auth:</span>
+                  <span className={`font-semibold ${user.migrationStatus === 'unmigrated' ? 'text-amber-600' : 'text-emerald-600'}`}>
+                    {user.migrationStatus === 'unmigrated' ? 'Unmigrated (Legacy)' : 'Migrated (Firebase Auth)'}
                   </span>
                 </div>
               </div>

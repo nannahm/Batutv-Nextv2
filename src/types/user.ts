@@ -41,6 +41,7 @@ export function toCanonicalRole(roleStr?: string | null): CanonicalUserRole {
 }
 
 export type UserStatus = 'aktif' | 'nonaktif' | 'ditangguhkan';
+export type MigrationStatus = 'migrated' | 'unmigrated';
 
 export interface UserLoginSessionInfo {
   browser: string;
@@ -58,6 +59,8 @@ export interface CMSUser {
   password?: string; // Stored securely for authentication verification
   role: UserRole;
   status: UserStatus;
+  migrationStatus?: MigrationStatus; // Status migrasi ke Firebase Auth custom claims (usr-005 s.d usr-009 legacy)
+  firebaseUid?: string; // UID Firebase Auth yang dipetakan secara sadar oleh Superadmin
   lastLogin?: string | null;
   lastLoginDetails?: UserLoginSessionInfo;
   createdAt: string;
@@ -79,8 +82,9 @@ export interface UserFormInput {
   email?: string;
   password?: string;
   confirmPassword?: string;
-  role: UserRole;
+  role: CanonicalUserRole | UserRole;
   status: UserStatus;
+  migrationStatus?: MigrationStatus;
   forcePasswordChange?: boolean;
 }
 

@@ -1,4 +1,4 @@
-import { CMSUser, UserFormInput, UserRole, UserStatus, RolePermissionDetail } from '../types/user';
+import { CMSUser, UserFormInput, UserRole, UserStatus, MigrationStatus, RolePermissionDetail, toCanonicalRole } from '../types/user';
 import { getStoredAuthors } from './authorAdminStore';
 import { logSystemActivity, getStoredSecurityConfig } from './systemSettingsStore';
 import { AdminUser } from '../types/admin';
@@ -309,10 +309,10 @@ export const validatePasswordPolicy = (
     const hasNumber = /[0-9]/.test(password);
     const hasSpecial = /[^A-Za-z0-9]/.test(password);
 
-    if (!hasUpperCase || !hasLowerCase || !hasNumber) {
+    if (!hasUpperCase || !hasLowerCase || !hasNumber || !hasSpecial) {
       return {
         isValid: false,
-        message: 'Password wajib memuat kombinasi huruf besar (A-Z), huruf kecil (a-z), dan angka (0-9).',
+        message: 'Password wajib memuat kombinasi huruf besar (A-Z), huruf kecil (a-z), angka (0-9), dan simbol khusus.',
       };
     }
   }
@@ -415,13 +415,13 @@ export const addUser = (
   input: UserFormInput,
   currentUser?: AdminUser | { name: string; role: string; email?: string }
 ): { success: boolean; user?: CMSUser; error?: string } => {
-  // Store-level RBAC check: only Admin can add users
+  // Store-level RBAC check: only Superadmin can add users and assign roles
   if (currentUser?.role) {
-    const roleClean = currentUser.role.toLowerCase();
-    if (!roleClean.includes('admin')) {
+    const canonicalCurrent = toCanonicalRole(currentUser.role);
+    if (canonicalCurrent !== 'superadmin') {
       return {
         success: false,
-        error: 'Otorisasi ditolak: Hanya Administrator yang berwenang menambahkan pengguna baru.',
+        error: 'Otorisasi ditolak: Hanya Super Administrator yang berwenang menambahkan pengguna baru atau menetapkan peran.',
       };
     }
   }
@@ -507,8 +507,9 @@ export const addUser = (
     username: cleanUsername,
     email: resolvedEmail,
     password: input.password,
-    role: input.role,
+    role: toCanonicalRole(input.role),
     status: input.status || 'aktif',
+    migrationStatus: input.migrationStatus || 'migrated',
     createdAt: nowIso,
     updatedAt: nowIso,
     lastLogin: null,
@@ -547,13 +548,13 @@ export const updateUser = (
   input: Partial<UserFormInput>,
   currentUser?: AdminUser | { name: string; role: string; email?: string }
 ): { success: boolean; user?: CMSUser; error?: string } => {
-  // Store-level RBAC check: only Admin can update users
+  // Store-level RBAC check: only Super Administrator can manage users
   if (currentUser?.role) {
-    const roleClean = currentUser.role.toLowerCase();
-    if (!roleClean.includes('admin')) {
+    const canonicalCurrent = toCanonicalRole(currentUser.role);
+    if (canonicalCurrent !== 'superadmin') {
       return {
         success: false,
-        error: 'Otorisasi ditolak: Hanya Administrator yang berwenang memperbarui pengguna.',
+        error: 'Otorisasi ditolak: Hanya Super Administrator yang berwenang memperbarui data pengguna.',
       };
     }
   }
@@ -570,16 +571,27 @@ export const updateUser = (
 
   // Super Admin Protection: Cannot downgrade Super Admin role or suspend Super Admin
   if (isProtectedSuperAdminAccount(existingUser.id, existingUser.email)) {
-    if (input.role && input.role !== 'admin') {
+    if (input.role && toCanonicalRole(input.role) !== 'superadmin') {
       return {
         success: false,
-        error: 'Akun Super Administrator Utama dilindungi: Peran Admin tidak dapat diturunkan atau diubah.',
+        error: 'Akun Super Administrator Utama dilindungi: Peran Super Admin tidak dapat diturunkan atau diubah.',
       };
     }
     if (input.status && input.status === 'ditangguhkan') {
       return {
         success: false,
         error: 'Akun Super Administrator Utama dilindungi dan tidak dapat ditangguhkan.',
+      };
+    }
+  }
+
+  // Strict role guard: only superadmin can assign or change roles
+  if (input.role && toCanonicalRole(input.role) !== toCanonicalRole(existingUser.role)) {
+    const currentCanonicalRole = toCanonicalRole(currentUser?.role);
+    if (currentCanonicalRole !== 'superadmin') {
+      return {
+        success: false,
+        error: 'Otorisasi ditolak: Hanya Super Administrator yang berwenang menetapkan atau mengubah peran (role) pengguna.',
       };
     }
   }
@@ -661,8 +673,9 @@ export const updateUser = (
     fullName: resolvedFullName,
     username: cleanUsername,
     email: resolvedEmail,
-    role: input.role || existingUser.role,
+    role: input.role ? toCanonicalRole(input.role) : toCanonicalRole(existingUser.role),
     status: input.status || existingUser.status,
+    migrationStatus: input.migrationStatus !== undefined ? input.migrationStatus : existingUser.migrationStatus,
     authorId: resolvedAuthorId,
     authorName: resolvedAuthorName,
     authorPosition: resolvedAuthorPosition,
@@ -720,18 +733,66 @@ export const updateUser = (
   return { success: true, user: updatedRecord };
 };
 
+// Helper: Update User Migration Status (Firebase Auth Custom Claims Integration)
+export const updateUserMigrationStatus = (
+  id: string,
+  newStatus: MigrationStatus,
+  firebaseUid?: string,
+  currentUser?: AdminUser | { name: string; role: string; email?: string }
+): { success: boolean; user?: CMSUser; error?: string } => {
+  if (currentUser?.role) {
+    const canonicalCurrent = toCanonicalRole(currentUser.role);
+    if (canonicalCurrent !== 'superadmin') {
+      return {
+        success: false,
+        error: 'Otorisasi ditolak: Hanya Super Administrator yang berwenang memperbarui status migrasi akun.',
+      };
+    }
+  }
+
+  const users = getStoredUsers();
+  const index = users.findIndex((u) => u.id === id);
+  if (index === -1) {
+    return { success: false, error: 'Data pengguna tidak ditemukan.' };
+  }
+
+  const updatedRecord: CMSUser = {
+    ...users[index],
+    migrationStatus: newStatus,
+    firebaseUid: firebaseUid || users[index].firebaseUid,
+    updatedAt: new Date().toISOString(),
+  };
+
+  users[index] = updatedRecord;
+  saveStoredUsers(users);
+
+  firestoreUserRepository.saveUser(updatedRecord).catch((err) => {
+    console.warn('[userAdminStore] Firestore async saveUser migrationStatus error:', err);
+  });
+
+  logSystemActivity(
+    currentUser || { name: 'Administrator', role: 'Administrator' },
+    'Update Status Migrasi Pengguna',
+    `Status migrasi akun @${updatedRecord.username} diperbarui menjadi: ${newStatus}`,
+    'info',
+    'Pengguna'
+  );
+
+  return { success: true, user: updatedRecord };
+};
+
 // Helper: Delete User (with safety checks)
 export const deleteUser = (
   id: string,
   currentUser?: AdminUser | { name: string; role: string; email?: string }
 ): { success: boolean; error?: string } => {
-  // Store-level RBAC check: only Admin can delete users
+  // Store-level RBAC check: only Super Administrator can delete users
   if (currentUser?.role) {
-    const roleClean = currentUser.role.toLowerCase();
-    if (!roleClean.includes('admin')) {
+    const canonicalCurrent = toCanonicalRole(currentUser.role);
+    if (canonicalCurrent !== 'superadmin') {
       return {
         success: false,
-        error: 'Otorisasi ditolak: Hanya Administrator yang berwenang menghapus pengguna.',
+        error: 'Otorisasi ditolak: Hanya Super Administrator yang berwenang menghapus pengguna.',
       };
     }
   }
@@ -752,8 +813,8 @@ export const deleteUser = (
   }
 
   // Safety: Prevent deleting the last active Administrator / Super Administrator
-  const adminUsers = users.filter((u) => (u.role === 'superadmin' || u.role === 'admin') && u.status === 'aktif');
-  if ((target.role === 'superadmin' || target.role === 'admin') && adminUsers.length <= 1) {
+  const adminUsers = users.filter((u) => toCanonicalRole(u.role) === 'superadmin' && u.status === 'aktif');
+  if (toCanonicalRole(target.role) === 'superadmin' && adminUsers.length <= 1) {
     return {
       success: false,
       error: 'Tidak dapat menghapus akun Administrator ini karena merupakan satu-satunya Admin aktif di sistem.',
@@ -794,13 +855,13 @@ export const resetUserPassword = (
   forceChangeOnLogin: boolean = true,
   currentUser?: AdminUser | { name: string; role: string; email?: string }
 ): { success: boolean; tempPassword?: string; error?: string } => {
-  // Store-level RBAC check: only Admin can reset other user passwords
+  // Store-level RBAC check: only Super Administrator can reset other user passwords
   if (currentUser?.role) {
-    const roleClean = currentUser.role.toLowerCase();
-    if (!roleClean.includes('admin')) {
+    const canonicalCurrent = toCanonicalRole(currentUser.role);
+    if (canonicalCurrent !== 'superadmin') {
       return {
         success: false,
-        error: 'Otorisasi ditolak: Hanya Administrator yang berwenang mereset kata sandi pengguna.',
+        error: 'Otorisasi ditolak: Hanya Super Administrator yang berwenang mereset kata sandi pengguna.',
       };
     }
   }
@@ -848,13 +909,13 @@ export const toggleUserSuspend = (
   id: string,
   currentUser?: AdminUser | { name: string; role: string; email?: string }
 ): { success: boolean; newStatus?: UserStatus; error?: string } => {
-  // Store-level RBAC check: only Admin can suspend/unsuspend users
+  // Store-level RBAC check: only Super Administrator can suspend/unsuspend users
   if (currentUser?.role) {
-    const roleClean = currentUser.role.toLowerCase();
-    if (!roleClean.includes('admin')) {
+    const canonicalCurrent = toCanonicalRole(currentUser.role);
+    if (canonicalCurrent !== 'superadmin') {
       return {
         success: false,
-        error: 'Otorisasi ditolak: Hanya Administrator yang berwenang menangguhkan akun.',
+        error: 'Otorisasi ditolak: Hanya Super Administrator yang berwenang menangguhkan akun.',
       };
     }
   }
@@ -985,9 +1046,11 @@ export const revokeAllUserSessions = (
 // Helper: Calculate Statistics
 export const getUserStats = () => {
   const users = getStoredUsers();
-  const superadmins = users.filter((u) => u.role === 'superadmin' || u.role === 'admin').length;
-  const editors = users.filter((u) => u.role === 'editor' || u.role === 'redaksi').length;
-  const reporters = users.filter((u) => u.role === 'reporter' || u.role === 'kontributor').length;
+  const superadmins = users.filter((u) => toCanonicalRole(u.role) === 'superadmin').length;
+  const editors = users.filter((u) => toCanonicalRole(u.role) === 'editor').length;
+  const reporters = users.filter((u) => toCanonicalRole(u.role) === 'reporter').length;
+  const migrated = users.filter((u) => u.migrationStatus === 'migrated').length;
+  const unmigrated = users.filter((u) => u.migrationStatus === 'unmigrated').length;
 
   return {
     total: users.length,
@@ -1001,5 +1064,7 @@ export const getUserStats = () => {
     redaksi: editors,
     reporters,
     kontributors: reporters,
+    migrated,
+    unmigrated,
   };
 };
