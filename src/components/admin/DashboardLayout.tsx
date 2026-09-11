@@ -80,6 +80,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
       case '/batutv-control/footer':
       case '/batutv-control/master-data/footer':
         return 'Master Data Footer';
+      case '/batutv-control/settings':
       case '/batutv-control/site-settings':
       case '/batutv-control/master-data/site-settings':
         return 'Master Data Site Settings';
@@ -164,6 +165,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
       case '/batutv-control/master-data/footer':
         return <FooterManagementModule onNavigateToPublic={onNavigate} />;
 
+      case '/batutv-control/settings':
       case '/batutv-control/site-settings':
       case '/batutv-control/master-data/site-settings':
         return <SiteSettingsModule onNavigateToPublic={onNavigate} />;

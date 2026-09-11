@@ -165,7 +165,11 @@ export const checkRoutePermission = (
     };
   }
 
-  if (path.startsWith('/batutv-control/site-settings') || path.startsWith('/batutv-control/master-data/site-settings')) {
+  if (
+    path.startsWith('/batutv-control/settings') ||
+    path.startsWith('/batutv-control/site-settings') ||
+    path.startsWith('/batutv-control/master-data/site-settings')
+  ) {
     if (isSuperAdmin) {
       return { allowed: true, role, moduleName: 'Master Data Site Settings' };
     }

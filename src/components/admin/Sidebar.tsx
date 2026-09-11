@@ -404,7 +404,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     if (isSuperAdmin) {
       masterItems.push({
         name: 'Site Settings',
-        path: '/batutv-control/site-settings',
+        path: '/batutv-control/settings',
         icon: Sliders,
         isReady: true,
       });
