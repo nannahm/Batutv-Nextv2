@@ -219,3 +219,24 @@ Untuk pipeline CI/CD produksi mandiri penuh di luar sandbox:
    - `npx tsc --noEmit`: Lolos bersih `EXIT: 0` dengan 0 error.
 3. **Status Domain Code**:
    - `src/features/articles/` terverifikasi aktif sesuai D-016 di `DECISIONS.md`.
+
+## Rencana Masa Depan (Belum Dijadwalkan — Referensi Saja)
+
+### Kemungkinan Migrasi Konten dari WordPress
+Pemilik project menyampaikan kemungkinan suatu saat membutuhkan migrasi/import konten dari
+WordPress ke platform ini (misalnya artikel, media, atau taksonomi dari situs WordPress lama).
+Ini BUKAN bagian dari 7 fase migrasi Next.js yang sedang berjalan — murni dicatat sebagai
+kebutuhan potensial di masa depan.
+
+Catatan teknis awal (untuk referensi kalau nanti benar-benar dikerjakan):
+- WordPress mengekspos data lewat WXR (WordPress eXtended RSS, format XML export bawaan)
+  atau REST API (`/wp-json/wp/v2/posts`, `/wp-json/wp/v2/media`, dll).
+- Struktur data WordPress (post, page, category, tag, media attachment) punya kemiripan
+  konsep dengan skema Firestore yang sudah ada di project ini (AdminArticle, AdminPage,
+  AdminCategory, AdminTag, AdminMedia) — kemungkinan besar bisa dipetakan dengan adapter
+  mirip `articleMapper.ts`/`videoMapper.ts` yang sudah ada.
+- Kalau nanti dikerjakan, sebaiknya jadi fase/task terpisah di luar 7 fase migrasi ini,
+  dengan audit dulu: volume konten WordPress yang akan dimigrasikan, apakah perlu one-time
+  import script atau sinkronisasi berkelanjutan, dan mapping field yang tidak 1:1.
+
+**Status**: Tidak dijadwalkan. Tidak ada tindakan yang perlu diambil sekarang.
