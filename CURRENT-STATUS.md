@@ -164,6 +164,13 @@ basis kode yang ada, mengikuti panduan migrasi di `ARCHITECTURE.md` dan `DECISIO
    - Feature slice `src/features/navigation/` terstandarisasi: `types.ts`, `schemas.ts` (validasi Zod label, url, targetType, badge), `adminFirestoreNavigationRepository.ts` (Firebase Admin SDK D-002 compliant), dan `liveFirestoreNavigationService.ts` (2-tier query + tree hierarchy builder).
    - Admin dashboard route `src/app/(dashboard)/batutv-control/navigasi/page.tsx` dan alias `src/app/(dashboard)/batutv-control/navigation/page.tsx` terintegrasi bersih ke Next.js App Router dan terverifikasi pada tabel rute `next build`.
    - Pola arsitektur D-027 terverifikasi: Admin SPA tetap murni menggunakan Client SDK store untuk CRUD dengan proteksi keamanan server-enforced pada `firestore.rules`.
+3. **Sub-Task 3 (Site Settings & Footer Management)**:
+   - Feature slice `src/features/settings/` dibangun lengkap dengan validasi Zod (`schemas.ts`) untuk domain `SiteSettings` (identity, logos, favicon, colors, typography, seo, publisher, socialMedia, verification) dan `FooterConfig` (mediaInfo, companyLinks, legalLinks, socialMedia, copyright, logo, mediaNetworks).
+   - 2-Tier Architecture Admin SDK murni (`adminFirestoreSiteSettingsRepository.ts`, `liveFirestoreSiteSettingsService.ts`, `adminFirestoreFooterRepository.ts`, `liveFirestoreFooterService.ts`) bebas dari Client SDK di konteks server (D-002 & D-027).
+   - Penegakan D-027 pada panel admin: Komponen SPA `SiteSettingsModule.tsx` dan `FooterManagementModule.tsx` tetap murni menggunakan Client SDK store (`siteSettingsStore.ts` & `footerAdminStore.ts`) tanpa mengimpor Server Actions.
+   - Normalisasi Rute Admin: Disediakan rute kanonik `/batutv-control/settings`, rute alias redirect `/batutv-control/site-settings`, dan `/batutv-control/footer` yang terintegrasi di Next.js App Router, `Sidebar.tsx`, `DashboardLayout.tsx`, dan `rbac.ts`.
+   - Server-Rendered Public Portal: Komponen `src/app/(portal)/layout.tsx` mengambil data live Firestore Admin SDK via `fetchFooterConfigLive()` dan `fetchSiteSettingsLive()`, menghasilkan dynamic root metadata SEO dan me-render komponen `<Footer>` secara SSR dengan fallback graceful ke seed cache.
+   - Verifikasi Build: `npm run typecheck` (`0 error`) dan `npx next build --webpack` (104 halaman statis & dinamis ter-generate sukses bersih).
 
 ## Catatan Kredensial Firebase Admin Service Account (Prasyarat CI/CD & Production Build)
 Untuk pipeline CI/CD produksi mandiri penuh di luar sandbox:
