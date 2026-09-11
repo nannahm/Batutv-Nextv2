@@ -27,12 +27,9 @@ export const BatuTVBrandLogo: React.FC<BatuTVBrandLogoProps> = ({
   customLogoUrl,
   altText = 'BatuTV - Televisi Kota Batu',
 }) => {
-  const [imageError, setImageError] = React.useState(false);
-
   // If custom logo image is provided and valid (and not an internal vector placeholder that failed)
   if (
     customLogoUrl &&
-    !imageError &&
     customLogoUrl !== '/brand/batutv-logo.svg' &&
     customLogoUrl !== '/brand/batutv-logo-dark.svg' &&
     customLogoUrl !== '/brand/batutv-logo-publisher.png'
@@ -43,7 +40,9 @@ export const BatuTVBrandLogo: React.FC<BatuTVBrandLogoProps> = ({
         alt={altText}
         className={`shrink-0 select-none object-contain max-w-full ${className}`}
         style={{ height }}
-        onError={() => setImageError(true)}
+        onError={(e) => {
+          e.currentTarget.style.display = 'none';
+        }}
       />
     );
   }
