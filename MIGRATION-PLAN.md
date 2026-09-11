@@ -49,9 +49,10 @@
 - [ ] Admin category/tag management
 
 ### Fase 6 — Pages, Navigation, Site Settings, Users
-- [ ] Port `IPageRepository`, `INavigationRepository`, `ISiteSettingsRepository`, `IFooterRepository`, `IUserRepository`
-- [ ] Dynamic static pages routing: `app/(portal)/[slug]/page.tsx`
-- [ ] Admin management views
+- [x] Port `IPageRepository` & `INavigationRepository` (Admin SDK 2-tier + Zod schemas)
+- [x] Dynamic static pages routing: `app/(portal)/[slug]/page.tsx`
+- [ ] Port `ISiteSettingsRepository`, `IFooterRepository`, `IUserRepository`
+- [x] Admin management views (`batutv-control/pages`, `batutv-control/navigasi`)
 - [ ] System settings & live Firestore syncing tools
 
 ### Fase 7 — Cutover, Cleanup & Final Audit

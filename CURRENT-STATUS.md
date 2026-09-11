@@ -29,7 +29,7 @@ basis kode yang ada, mengikuti panduan migrasi di `ARCHITECTURE.md` dan `DECISIO
 | **Fase 3** | Authentication & RBAC (httpOnly Cookies, Middleware Guard, Custom Claims) | 🟢 Selesai | 100% |
 | **Fase 4** | Videos & Media (YouTube Integration, Player, Storage) | 🟢 Selesai | 100% |
 | **Fase 5** | Taksonomi (Categories, Tags, Archive Routing) | 🟢 Selesai | 100% |
-| **Fase 6** | Pages, Navigation, Settings, Users (Static Pages, Menus, Sync) | ⚪ Belum Dimulai | 0% |
+| **Fase 6** | Pages, Navigation, Settings, Users (Static Pages, Menus, Sync) | 🟡 Sedang Berjalan | 40% |
 | **Fase 7** | Cutover, 23 Audit Scripts, Final Cleanup | ⚪ Belum Dimulai | 0% |
 
 ## Progres Terverifikasi Fase 3 (Authentication & RBAC)
@@ -152,6 +152,18 @@ basis kode yang ada, mengikuti panduan migrasi di `ARCHITECTURE.md` dan `DECISIO
 6. **Sub-Task 5 (Dokumentasi & Standarisasi Arsitektur)**:
    - Keputusan arsitektur D-022, D-023, dan D-024 dicatat secara resmi di `DECISIONS.md`.
    - `CURRENT-STATUS.md` diperbarui menandai Fase 5 selesai 100%.
+
+## Progres Terverifikasi Fase 6 (Pages, Navigation, Settings, Users)
+1. **Sub-Task 1 (Pages - Static Content Pages)**:
+   - Feature slice `src/features/pages/` dibangun dengan validasi Zod (`schemas.ts`) termasuk perlindungan 29 kata kunci reserved slugs sistem.
+   - 2-Tier Architecture Admin SDK (`adminFirestorePageRepository.ts`, `liveFirestorePageService.ts`) bebas dari Client SDK di server context (D-002 & D-027).
+   - Rute publik dinamis `src/app/(portal)/[slug]/page.tsx` dengan dukungan SSG/ISR (`revalidate = 60`), render Markdown, dan proteksi status 'published'.
+   - Admin dashboard route `src/app/(dashboard)/batutv-control/pages/page.tsx` berbasis Client SDK (`PageManagementModule.tsx`) dan aman dari import server action (D-025 & D-027).
+2. **Sub-Task 2 (Navigation Menu Builder)**:
+   - Ekstraksi data seed awal ke `src/data/initialNavigationData.ts` untuk memfasilitasi interoperabilitas bersih antara Client Store dan Server Fetcher.
+   - Feature slice `src/features/navigation/` terstandarisasi: `types.ts`, `schemas.ts` (validasi Zod label, url, targetType, badge), `adminFirestoreNavigationRepository.ts` (Firebase Admin SDK D-002 compliant), dan `liveFirestoreNavigationService.ts` (2-tier query + tree hierarchy builder).
+   - Admin dashboard route `src/app/(dashboard)/batutv-control/navigasi/page.tsx` dan alias `src/app/(dashboard)/batutv-control/navigation/page.tsx` terintegrasi bersih ke Next.js App Router dan terverifikasi pada tabel rute `next build`.
+   - Pola arsitektur D-027 terverifikasi: Admin SPA tetap murni menggunakan Client SDK store untuk CRUD dengan proteksi keamanan server-enforced pada `firestore.rules`.
 
 ## Catatan Kredensial Firebase Admin Service Account (Prasyarat CI/CD & Production Build)
 Untuk pipeline CI/CD produksi mandiri penuh di luar sandbox:
