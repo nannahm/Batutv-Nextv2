@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState, useEffect } from 'react';
 import { CategoryItem } from '../types/news';
 import { FooterConfig, getStoredFooterConfig, FOOTER_UPDATED_EVENT, generateOrganizationSchema } from '../data/footerAdminStore';
@@ -12,6 +14,8 @@ interface FooterProps {
   onOpenPrivacyModal?: () => void;
   onNavigateAdmin?: () => void;
   onNavigate?: (path: string) => void;
+  initialFooterConfig?: FooterConfig;
+  initialSiteSettings?: SiteSettings;
 }
 
 /**
@@ -22,9 +26,26 @@ interface FooterProps {
  * - Konten (Media Info, Link Perusahaan, Link Legal, Sosial Media, Copyright, & Logo)
  *   bersumber langsung dari Footer Management CMS dan sinkron secara real-time.
  */
-export const Footer: React.FC<FooterProps> = ({ onNavigateAdmin, onNavigate }) => {
-  const [config, setConfig] = useState<FooterConfig>(() => getStoredFooterConfig());
-  const [siteSettings, setSiteSettings] = useState<SiteSettings>(() => getStoredSiteSettings());
+export const Footer: React.FC<FooterProps> = ({
+  onNavigateAdmin,
+  onNavigate,
+  initialFooterConfig,
+  initialSiteSettings,
+}) => {
+  const [config, setConfig] = useState<FooterConfig>(() => initialFooterConfig || getStoredFooterConfig());
+  const [siteSettings, setSiteSettings] = useState<SiteSettings>(() => initialSiteSettings || getStoredSiteSettings());
+
+  useEffect(() => {
+    if (initialFooterConfig) {
+      setConfig(initialFooterConfig);
+    }
+  }, [initialFooterConfig]);
+
+  useEffect(() => {
+    if (initialSiteSettings) {
+      setSiteSettings(initialSiteSettings);
+    }
+  }, [initialSiteSettings]);
 
   // Listen to live updates from CMS without requiring full page reload
   useEffect(() => {

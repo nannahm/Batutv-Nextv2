@@ -150,3 +150,96 @@ export const siteSettingsSchema = z.object({
 });
 
 export type SiteSettingsInput = z.infer<typeof siteSettingsSchema>;
+
+// ==========================================
+// FOOTER CONFIG SCHEMAS
+// ==========================================
+
+export const mediaInfoSchema = z.object({
+  mediaName: z.string().default('BatuTV Media Network'),
+  shortDescription: z.string().default('Portal berita dan streaming televisi lokal terpercaya Malang Raya.'),
+  address: z.string().default('Jl. TVRI No. 1, Oro-Oro Ombo, Kec. Batu'),
+  city: z.string().default('Kota Batu'),
+  province: z.string().default('Jawa Timur'),
+  postalCode: z.string().default('65316'),
+  editorialEmail: z.string().default('redaksi@batutv.id'),
+  businessEmail: z.string().default('marketing@batutv.id'),
+  phoneNumber: z.string().default('+62 341 590001'),
+  whatsappNumber: z.string().default('+62 812-3456-7890'),
+});
+
+export const companyLinksSchema = z.object({
+  tentangKamiUrl: z.string().default('/tentang-kami'),
+  redaksiUrl: z.string().default('/redaksi'),
+  kontakUrl: z.string().default('/kontak-kami'),
+  karirUrl: z.string().default('/karir'),
+});
+
+export const legalLinksSchema = z.object({
+  pedomanMediaSiberUrl: z.string().default('/pedoman-media-siber'),
+  kodeEtikJurnalistikUrl: z.string().default('/kode-etik-jurnalistik'),
+  disclaimerUrl: z.string().default('/disclaimer'),
+  privacyPolicyUrl: z.string().default('/kebijakan-privasi'),
+  termsOfServiceUrl: z.string().default('/syarat-ketentuan'),
+});
+
+export const socialMediaConfigSchema = z.object({
+  showSection: z.boolean().optional().default(true),
+  headingText: z.string().optional().default('Ikuti kami di:'),
+  facebookUrl: z.string().default('https://facebook.com/batutvofficial'),
+  showFacebook: z.boolean().optional().default(true),
+  instagramUrl: z.string().default('https://instagram.com/batutv_official'),
+  showInstagram: z.boolean().optional().default(true),
+  youtubeUrl: z.string().default('https://youtube.com/@batutv'),
+  showYoutube: z.boolean().optional().default(true),
+  tiktokUrl: z.string().default('https://tiktok.com/@batutv'),
+  showTiktok: z.boolean().optional().default(true),
+  xTwitterUrl: z.string().default('https://x.com/batutv_official'),
+  showXTwitter: z.boolean().optional().default(true),
+  googleNewsUrl: z.string().optional().default('https://news.google.com'),
+  showGoogleNews: z.boolean().optional().default(true),
+  telegramUrl: z.string().default('https://t.me/batutvchannel'),
+  showTelegram: z.boolean().optional().default(true),
+  linkedInUrl: z.string().default('https://linkedin.com/company/batutv'),
+  showLinkedIn: z.boolean().optional().default(true),
+});
+
+export const copyrightSchema = z.object({
+  copyrightText: z.string().default('© 2026 BATUTV Media Network. All Rights Reserved.'),
+  networkSubtitle: z.string().default('A Group Member of Batu Digital Media Network'),
+});
+
+export const footerLogoSchema = z.object({
+  showLogo: z.boolean().optional().default(true),
+  logoUrl: z.string().default('/brand/batutv-logo.svg'),
+  altText: z.string().default('BatuTV Media Network Official Logo'),
+  mediaId: z.string().optional(),
+});
+
+export const mediaNetworkItemSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  url: z.string(),
+  logoUrl: z.string().optional(),
+  presetStyle: z
+    .enum(['viva', 'vlix', 'tvonenews', 'antvklik', 'intipseleb', 'jagodangdut', 'custom'])
+    .optional(),
+  altText: z.string().optional(),
+  order: z.number().default(0),
+  isActive: z.boolean().default(true),
+});
+
+export const footerConfigSchema = z.object({
+  mediaInfo: mediaInfoSchema,
+  companyLinks: companyLinksSchema,
+  legalLinks: legalLinksSchema,
+  socialMedia: socialMediaConfigSchema,
+  copyright: copyrightSchema,
+  logo: footerLogoSchema,
+  mediaNetworks: z.array(mediaNetworkItemSchema).default([]),
+  updatedAt: z.string().default(() => new Date().toISOString()),
+  updatedBy: z.string().optional().default('Administrator'),
+});
+
+export type FooterConfigInput = z.infer<typeof footerConfigSchema>;
+

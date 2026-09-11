@@ -13,6 +13,18 @@ import {
   SiteSettingsValidationErrors,
 } from '@/src/types/siteSettings';
 
+import {
+  FooterConfig,
+  MediaInfoData,
+  CompanyLinksData,
+  LegalLinksData,
+  SocialMediaData,
+  CopyrightData,
+  FooterLogoData,
+  MediaNetworkItem,
+  FooterValidationErrors,
+} from '@/src/types/footer';
+
 export type {
   SiteSettings,
   SiteIdentity,
@@ -26,10 +38,25 @@ export type {
   SocialMediaSettings,
   GoogleVerificationSettings,
   SiteSettingsValidationErrors,
+  FooterConfig,
+  MediaInfoData,
+  CompanyLinksData,
+  LegalLinksData,
+  SocialMediaData,
+  CopyrightData,
+  FooterLogoData,
+  MediaNetworkItem,
+  FooterValidationErrors,
 };
 
 export interface SiteSettingsFetchResult {
   source: 'firestore' | 'seed-cache';
   settings: SiteSettings;
+  warning?: string;
+}
+
+export interface FooterConfigFetchResult {
+  source: 'firestore' | 'seed-cache';
+  config: FooterConfig;
   warning?: string;
 }
