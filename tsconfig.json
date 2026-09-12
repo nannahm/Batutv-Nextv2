@@ -42,8 +42,7 @@
   ],
   "exclude": [
     "node_modules",
-    "src/main.tsx",
-    "src/App.tsx",
-    "server.ts"
+    ".next",
+    "legacy"
   ]
 }

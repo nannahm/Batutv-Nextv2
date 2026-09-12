@@ -30,13 +30,23 @@ basis kode yang ada, mengikuti panduan migrasi di `ARCHITECTURE.md` dan `DECISIO
 | **Fase 4** | Videos & Media (YouTube Integration, Player, Storage) | 🟢 Selesai | 100% |
 | **Fase 5** | Taksonomi (Categories, Tags, Archive Routing) | 🟢 Selesai | 100% |
 | **Fase 6** | Pages, Navigation, Settings, Users (Static Pages, Menus, Sync) | 🟢 Selesai | 100% |
-| **Fase 7** | Cutover, 23 Audit Scripts, Final Cleanup | 🟡 Sedang Berjalan | Sub-Task 1 & Sub-Task B5 Selesai (App.tsx 100% Unmounted) |
+| **Fase 7** | Cutover, 23 Audit Scripts, Final Cleanup | 🟡 Sedang Berjalan | Sub-Task 7A, 7B, 7C (B5 + Archival) Selesai |
 
-## Milestone Terverifikasi: Penyelesaian Task B5 (Pensiun Total ClientAppWrapper & Unmount Penuh App.tsx)
-- **Commit 1 (`db19ee1`)**: Halaman `/login` (`src/app/(auth)/login/page.tsx`) dimigrasi ke komponen native Next.js `LoginPage.tsx` lengkap dengan proteksi ketat open redirect (penolakan scheme eksternal `://`, protocol-relative `//`, dan normalisasi backslash `\`).
-- **Commit 2 (`05ef711`)**: Root dashboard `/batutv-control` (`src/app/(dashboard)/batutv-control/page.tsx`) dimigrasi ke komponen native Next.js `DashboardPage.tsx` dengan sinkronisasi sesi fail-safe (tanpa fabrikasi identitas palsu, selaras dengan arsitektur server guard layout). Technical debt #7 (alias 'admin' pada `rbac.ts`) resmi didokumentasikan.
-- **Commit 3 (`016cfcb`)**: File jembatan SPA `src/components/ClientAppWrapper.tsx` resmi dihapus secara permanen setelah audit membuktikan 0 sisa referensi di seluruh repositori.
-- **Dampak Arsitektural**: Komponen monolithic SPA warisan (`src/App.tsx`) kini **100% unmounted** dan tidak lagi dirender atau diimpor oleh rute Next.js manapun di seluruh aplikasi. Seluruh 104 rute App Router kini beroperasi secara native.
+## Milestone Terverifikasi: Penyelesaian Sub-Task 7A–7C (Pensiun Total SPA & Pengarsipan Arsitektur Legacy)
+- **Sub-Task B5 (Unmount Penuh SPA & Pensiun ClientAppWrapper)**:
+  - Commit 1 (`db19ee1`): Rute `/login` native Next.js dengan sanitasi open redirect ketat.
+  - Commit 2 (`05ef711`): Rute `/batutv-control` native Next.js dengan fail-safe session sync & pencatatan technical debt #7.
+  - Commit 3 (`016cfcb`): Berkas `src/components/ClientAppWrapper.tsx` resmi dihapus permanen.
+- **Sub-Task 7C (Non-Destructive Archival ke `legacy/`)**:
+  - Pemindahan 5 berkas inti via `git mv`: `src/App.tsx`, `src/main.tsx`, `server.ts`, `index.html`, `vite.config.ts` dialihkan ke folder `/legacy`.
+  - Berkas `src/server/articleResolver.ts` dipertahankan di `src/server/` untuk menjamin konsistensi suite audit integritas (Test 6: SSR Resolver & Secret Isolation).
+  - Isolasi build: `tsconfig.json` mengecualikan direktori `legacy`.
+  - Penyelarasan skrip: `package.json` beralih 100% ke Next.js sebagai default (`dev`, `build`, `start`), dengan alias warisan `legacy:vite`, `legacy:preview`, dan `legacy:server`.
+  - Penyelarasan deployment: `vercel.json` diselaraskan ke `{"framework": "nextjs"}` (Opsi A) menghapus rewrites SPA.
+  - Verifikasi: Suite `audit:integrity` tetap **9/9 PASS (100%)**, `next build --webpack` **104/104 rute**, dan `tsc --noEmit` **exit code 0**.
+- **Sisa Item Fase 7**:
+  - Poin 2 & 6: Whitelist superadmin & deploy produksi Vercel (sengaja ditunda sesuai keputusan produk).
+  - Sisa 10% Fase 2: Unit test cakupan penuh & integrasi opsional `ArticleBentoGrid`.
 
 
 ## Catatan Integritas Metrik Audit & Simulasi (Fase 7 Sub-Task 1)

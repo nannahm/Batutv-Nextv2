@@ -5,13 +5,13 @@ import { createServer as createViteServer, ViteDevServer } from 'vite';
 import {
   getArticleForServerAsync,
   buildArticleMetadataHtml,
-} from './src/server/articleResolver';
+} from '../src/server/articleResolver';
 import {
   generateSitemapXml,
   generateNewsSitemapXml,
   generateRobotsTxt,
-} from './src/utils/seoGenerators';
-import { logger, generateCorrelationId } from './src/observability/logger';
+} from '../src/utils/seoGenerators';
+import { logger, generateCorrelationId } from '../src/observability/logger';
 
 const PORT = 3000;
 const isProduction = process.env.NODE_ENV === 'production';
