@@ -4,6 +4,28 @@ import { HeroHeadlineData, HeadlineArticleData, defaultHeroHeadlineData } from '
 import { LatestNewsPost } from './latestNewsData';
 import { resolveArticleSlug, resolveArticleHref, ensureUniqueFeedSlugs } from '../utils/slugResolver';
 import { firestoreArticleRepository } from '../repositories/firestore/firestoreArticleRepository';
+import {
+  getArticlePublishedTimestamp,
+  formatNewsFeedDateTime,
+  formatHeadlineDateTime,
+  mapAdminArticleToHeadlineData,
+  isArticleLive,
+  getHeroHeadlineArticlesFromList,
+  mapAdminArticlesToFeedPosts,
+  mapAdminArticlesToHeroData,
+} from '../utils/newsFormatters';
+
+// Re-export pure formatting utilities so existing callers (adminDashboardData, seoGenerators, etc.) don't break
+export {
+  getArticlePublishedTimestamp,
+  formatNewsFeedDateTime,
+  formatHeadlineDateTime,
+  mapAdminArticleToHeadlineData,
+  isArticleLive,
+  getHeroHeadlineArticlesFromList,
+  mapAdminArticlesToFeedPosts,
+  mapAdminArticlesToHeroData,
+};
 
 const STORAGE_KEY = 'batutv_admin_articles_store';
 
@@ -61,153 +83,13 @@ export function saveStoredArticles(articles: AdminArticle[], syncToFirestore: bo
   }
 }
 
-// Parse article published date string into exact timestamp for deterministic sorting (DESC)
-export function getArticlePublishedTimestamp(art: AdminArticle): number {
-  if (art.publishedAt) {
-    const match = art.publishedAt.match(/^(\d{4})-(\d{2})-(\d{2})(?:[T\s](\d{2}):(\d{2})(?::(\d{2}))?)?/);
-    if (match) {
-      const [, y, m, d, hh = '00', mm = '00', ss = '00'] = match;
-      const t = new Date(Number(y), Number(m) - 1, Number(d), Number(hh), Number(mm), Number(ss)).getTime();
-      if (!isNaN(t)) return t;
-    }
-    const t = new Date(art.publishedAt).getTime();
-    if (!isNaN(t)) return t;
-  }
-  if (art.createdAt) {
-    const t = new Date(art.createdAt).getTime();
-    if (!isNaN(t)) return t;
-  }
-  return 0;
-}
-
-// Format date and time for News Feed display (Indonesian WIB standard)
-export function formatNewsFeedDateTime(dateStr?: string): { date: string; time: string; fullDateIndo: string } {
-  if (!dateStr) {
-    const now = new Date();
-    const d = String(now.getDate()).padStart(2, '0');
-    const m = String(now.getMonth() + 1).padStart(2, '0');
-    const y = now.getFullYear();
-    const hh = String(now.getHours()).padStart(2, '0');
-    const mm = String(now.getMinutes()).padStart(2, '0');
-    return {
-      date: `${d}/${m}/${y}`,
-      time: `${hh}:${mm} WIB`,
-      fullDateIndo: `${d} ${m} ${y}`,
-    };
-  }
-
-  try {
-    const match = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})(?:[T\s](\d{2}):(\d{2})(?::(\d{2}))?)?/);
-    if (match) {
-      const [, y, m, d, hh = '00', mm = '00'] = match;
-      const day = d.padStart(2, '0');
-      const month = m.padStart(2, '0');
-      const year = y;
-      const hours = hh.padStart(2, '0');
-      const minutes = mm.padStart(2, '0');
-
-      const monthNames = [
-        'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-        'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
-      ];
-      const monthIndex = parseInt(month, 10) - 1;
-      const fullDateIndo = `${parseInt(day, 10)} ${monthNames[monthIndex] || month} ${year}`;
-
-      return {
-        date: `${day}/${month}/${year}`,
-        time: `${hours}:${minutes} WIB`,
-        fullDateIndo,
-      };
-    }
-
-    const d = new Date(dateStr);
-    if (!isNaN(d.getTime())) {
-      const day = String(d.getDate()).padStart(2, '0');
-      const month = String(d.getMonth() + 1).padStart(2, '0');
-      const year = d.getFullYear();
-      const hours = String(d.getHours()).padStart(2, '0');
-      const minutes = String(d.getMinutes()).padStart(2, '0');
-
-      const monthNames = [
-        'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-        'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
-      ];
-      const fullDateIndo = `${d.getDate()} ${monthNames[d.getMonth()]} ${year}`;
-
-      return {
-        date: `${day}/${month}/${year}`,
-        time: `${hours}:${minutes} WIB`,
-        fullDateIndo,
-      };
-    }
-  } catch {
-    // ignore
-  }
-
-  return { date: '27/08/2026', time: '09:00 WIB', fullDateIndo: '27 Agustus 2026' };
-}
-
 /**
  * SO5 Query: Get all Published Articles for News Feed sorted strictly by publishedAt DESC
  * Guarantees that any newly published article immediately appears at index 0 on Homepage.
  */
 export function getPublishedNewsFeedPosts(limit?: number): LatestNewsPost[] {
   const articles = getStoredArticles();
-  const now = Date.now();
-
-  // Strict Filter: Only status === 'published' (exclude draft, trash, and future scheduled)
-  const publishedArticles = articles.filter((a) => {
-    if (a.status !== 'published') return false;
-    // Exclude scheduled articles that haven't reached their published time yet
-    if (a.publishedAt) {
-      const pubTime = getArticlePublishedTimestamp(a);
-      if (pubTime > now) return false;
-    }
-    return true;
-  });
-
-  // Strict Sort: Order by publishedAt descending (latest first)
-  publishedArticles.sort((a, b) => {
-    return getArticlePublishedTimestamp(b) - getArticlePublishedTimestamp(a);
-  });
-
-  // Map to LatestNewsPost format expected by SO5 MainPortalFeed & NewsFeedItem
-  const rawFeedPosts: LatestNewsPost[] = publishedArticles.map((art) => {
-    const dt = formatNewsFeedDateTime(art.publishedAt || art.createdAt);
-
-    let cleanExcerpt = art.excerpt ? art.excerpt.trim() : '';
-    if (!cleanExcerpt && art.content) {
-      cleanExcerpt = art.content
-        .replace(/<[^>]*>/g, '')
-        .replace(/\s+/g, ' ')
-        .trim()
-        .slice(0, 160);
-      if (cleanExcerpt.length >= 160) cleanExcerpt += '...';
-    }
-
-    const safeSlug = resolveArticleSlug(art.slug, art.id);
-    const safeHref = resolveArticleHref(art.slug, art.id);
-
-    return {
-      id: art.id,
-      title: art.title,
-      category: art.category || 'Daerah',
-      date: dt.date,
-      time: dt.time,
-      imageUrl:
-        art.featuredImage ||
-        'https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=800&auto=format&fit=crop&q=80',
-      imageAlt: art.imageAlt || art.title,
-      excerpt: cleanExcerpt || 'Berita terkini seputar Kota Batu dan informasi nasional aktual dari redaksi BatuTV.',
-      href: safeHref,
-      slug: safeSlug,
-    };
-  });
-
-  // Guarantee that every post in the published feed has a unique URL & slug without collisions
-  const feedPosts = ensureUniqueFeedSlugs(rawFeedPosts);
-
-  return limit ? feedPosts.slice(0, limit) : feedPosts;
+  return mapAdminArticlesToFeedPosts(articles, limit);
 }
 
 // Get counts for sidebar badges and tabs
@@ -280,178 +162,16 @@ export function normalizeHeadlinePositions(articles: AdminArticle[]): AdminArtic
   });
 }
 
-// Helper: Determine if an article is currently live and eligible for public display
-export function isArticleLive(art: AdminArticle): boolean {
-  if (art.status === 'trash' || art.status === 'draft') return false;
-  const now = Date.now();
-
-  if (art.status === 'published') {
-    if (art.publishedAt) {
-      const pubTime = getArticlePublishedTimestamp(art);
-      if (pubTime > now) return false; // Future scheduled publish time
-    }
-    return true;
-  }
-
-  if (art.status === 'scheduled') {
-    if (art.publishedAt) {
-      const schTime = getArticlePublishedTimestamp(art);
-      if (schTime <= now) return true; // Scheduled time has arrived
-    }
-    return false;
-  }
-
-  return false;
-}
-
 // Get active Hero Headline articles for SO3 (Strict Editorial Selection)
 export function getHeroHeadlineArticles(): AdminArticle[] {
   const articles = getStoredArticles();
-  const now = Date.now();
-
-  return articles
-    .filter((a) => {
-      // 1. Must be live (published or scheduled that reached publish time)
-      if (!isArticleLive(a)) return false;
-      // 2. Must be explicitly flagged as headline by editorial
-      if (!a.isHeadline) return false;
-      // 3. Must not have passed its headlineUntil expiration
-      if (a.headlineUntil) {
-        const expTime = new Date(a.headlineUntil).getTime();
-        if (!isNaN(expTime) && expTime < now) return false;
-      }
-      return true;
-    })
-    .sort((a, b) => {
-      // Priority 1: Editorial Position (1..5)
-      const posA = a.headlinePosition || 999;
-      const posB = b.headlinePosition || 999;
-      if (posA !== posB) return posA - posB;
-      // Priority 2: Published date DESC (latest first)
-      return getArticlePublishedTimestamp(b) - getArticlePublishedTimestamp(a);
-    });
-}
-
-// Format date and time for SO3 Headline component
-function formatHeadlineDateTime(isoDateString?: string) {
-  if (!isoDateString) {
-    return { date: '27/08/2026', time: '08:00 WIB', humanDate: 'Kamis, 27 Agustus 2026' };
-  }
-  try {
-    const d = new Date(isoDateString);
-    if (isNaN(d.getTime())) {
-      return { date: '27/08/2026', time: '08:00 WIB', humanDate: 'Kamis, 27 Agustus 2026' };
-    }
-    const day = String(d.getDate()).padStart(2, '0');
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const year = d.getFullYear();
-    const hours = String(d.getHours()).padStart(2, '0');
-    const minutes = String(d.getMinutes()).padStart(2, '0');
-
-    const dayNames = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
-    const monthNames = [
-      'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-      'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
-    ];
-
-    const humanDate = `${dayNames[d.getDay()]}, ${d.getDate()} ${monthNames[d.getMonth()]} ${year}`;
-    return {
-      date: `${day}/${month}/${year}`,
-      time: `${hours}:${minutes} WIB`,
-      humanDate,
-    };
-  } catch {
-    return { date: '27/08/2026', time: '08:00 WIB', humanDate: 'Kamis, 27 Agustus 2026' };
-  }
-}
-
-// Convert AdminArticle to HeadlineArticleData with safe slug & URL resolution
-function mapAdminArticleToHeadlineData(art: AdminArticle): HeadlineArticleData {
-  const dt = formatHeadlineDateTime(art.publishedAt || art.createdAt);
-  const safeSlug = resolveArticleSlug(art.slug, art.id);
-  const safeHref = resolveArticleHref(art.slug, art.id);
-
-  return {
-    id: art.id,
-    category: art.category || 'Daerah',
-    title: art.title,
-    imageUrl:
-      art.featuredImage ||
-      'https://images.unsplash.com/photo-1570125909232-eb263c188f7e?q=80&w=1200&auto=format&fit=crop',
-    imageAlt: art.imageAlt || art.title,
-    date: dt.humanDate,
-    time: dt.time,
-    href: safeHref,
-    slug: safeSlug,
-  };
+  return getHeroHeadlineArticlesFromList(articles);
 }
 
 // Get structured HeroHeadlineData for SO3 Homepage Grid
 export function getHeroHeadlineData(): HeroHeadlineData {
   const articles = getStoredArticles();
-  const headlines = getHeroHeadlineArticles();
-
-  // If no editorial headlines exist, fallback to latest published articles or defaults
-  if (headlines.length === 0) {
-    const livePublished = articles
-      .filter((a) => isArticleLive(a))
-      .sort((a, b) => getArticlePublishedTimestamp(b) - getArticlePublishedTimestamp(a));
-
-    if (livePublished.length > 0) {
-      const mainArt = livePublished[0];
-      const main = mapAdminArticleToHeadlineData(mainArt);
-      const subHeadlines = livePublished.slice(1, 5).map(mapAdminArticleToHeadlineData);
-
-      // Backfill up to 4 if needed
-      if (subHeadlines.length < 4) {
-        const remainingNeed = 4 - subHeadlines.length;
-        const defaults = defaultHeroHeadlineData.subHeadlines.filter(
-          (dh) => dh.slug !== main.slug && !subHeadlines.some((sh) => sh.slug === dh.slug)
-        );
-        subHeadlines.push(...defaults.slice(0, remainingNeed));
-      }
-
-      return {
-        main,
-        subHeadlines,
-        adBanner: defaultHeroHeadlineData.adBanner,
-      };
-    }
-
-    return defaultHeroHeadlineData;
-  }
-
-  const mainArticle = headlines[0];
-  const main = mapAdminArticleToHeadlineData(mainArticle);
-  const subHeadlines: HeadlineArticleData[] = headlines.slice(1, 5).map(mapAdminArticleToHeadlineData);
-
-  // If fewer than 4 subheadlines from editorial, backfill from other live published articles first
-  if (subHeadlines.length < 4) {
-    const headlineIds = new Set(headlines.map((h) => h.id));
-    const otherLiveArticles = articles
-      .filter((a) => isArticleLive(a) && !headlineIds.has(a.id))
-      .sort((a, b) => getArticlePublishedTimestamp(b) - getArticlePublishedTimestamp(a));
-
-    for (const art of otherLiveArticles) {
-      if (subHeadlines.length >= 4) break;
-      subHeadlines.push(mapAdminArticleToHeadlineData(art));
-    }
-
-    // Final safety backfill from default headlines if database has very few articles
-    if (subHeadlines.length < 4) {
-      const remainingNeed = 4 - subHeadlines.length;
-      const defaults = defaultHeroHeadlineData.subHeadlines.filter(
-        (dh) => dh.slug !== main.slug && !subHeadlines.some((sh) => sh.slug === dh.slug)
-      );
-      subHeadlines.push(...defaults.slice(0, remainingNeed));
-    }
-  }
-
-  return {
-    main,
-    subHeadlines,
-    adBanner: defaultHeroHeadlineData.adBanner,
-  };
+  return mapAdminArticlesToHeroData(articles);
 }
 
 // Save or Update Article
