@@ -197,6 +197,19 @@ Untuk pipeline CI/CD produksi mandiri penuh di luar sandbox:
 1. Unit testing suite untuk mapper, Zod schema, dan repository.
 2. Pengintegrasian/pemberdayaan `ArticleBentoGrid` & `ArticleSkeleton` di rute portal publik.
 
+## Progres Terverifikasi Fase 7 (Poin 3 & Poin 4)
+1. **Poin 3 — Konsolidasi Lockfile**:
+   - Analisis dependensi kunci (`next`, `react`, `firebase`, `firebase-admin`, `motion`, `tailwindcss`) menunjukkan keselarasan semver antara `bun.lock` dan `package-lock.json`.
+   - `bun.lock` dihapus secara permanen; `package-lock.json` ditetapkan sebagai satu-satunya Source of Truth.
+   - Verifikasi sukses: `npm install` (bersih, EXIT 0), `npx tsc --noEmit` (0 errors, EXIT 0), `npx next build --webpack` (104/104 static pages generated, EXIT 0).
+   - Commit terpisah: `build(deps): remove bun.lock and consolidate on package-lock.json` (`504d857`).
+
+2. **Poin 4 — npm audit fix**:
+   - `npm audit` awal: 9 vulnerabilities (moderate severity) pada `qs` (via `body-parser`/`express`) dan `uuid` (via `@google-cloud/storage`, `gaxios`, `teeny-request`, `firebase-admin`).
+   - `npm audit fix` (tanpa `--force`) berhasil memutakhirkan dan menutup 7 vulnerabilities (`uuid`, `gaxios`, `teeny-request`, `retry-request`).
+   - Sisa vulnerability: 2 moderate pada `qs@6.15.3` (terikat pin semver internal `express@4.22.2` dependency range `qs: ~6.15.1`). Memerlukan konfirmasi pengguna sebelum tindakan `--force` atau upgrade Express.
+   - Verifikasi ulang: `npx tsc --noEmit` (0 errors, EXIT 0), `npx next build --webpack` (104/104 static pages, EXIT 0).
+
 ## Technical Debt Teridentifikasi (Fase 2, 4 & 6)
 1. **Penyimpanan Gambar sebagai DataURL Base64 di Firestore (Fase 4)**:
    - *Kondisi*: Dokumen pada koleksi `/media` berpotensi menyimpan string base64 (`data:image/webp;base64,...`) langsung di field `url` bila diunggah via canvas client.
