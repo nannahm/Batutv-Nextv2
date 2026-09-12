@@ -126,8 +126,8 @@ export const AuthorArchivePage: React.FC<AuthorArchivePageProps> = ({
     };
 
     setMetaTag('og:title', pageTitle);
-    setMetaTag('og:description', author.metaDescription || author.bio);
-    setMetaTag('og:image', author.photoUrl);
+    setMetaTag('og:description', author.metaDescription || author.bio || '');
+    setMetaTag('og:image', author.photoUrl || '');
     setMetaTag('og:url', canonicalUrl);
     setMetaTag('og:type', 'profile');
     setMetaTag('og:site_name', settings.identity.siteName || 'BatuTV');

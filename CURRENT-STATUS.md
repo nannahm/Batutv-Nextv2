@@ -197,8 +197,18 @@ Untuk pipeline CI/CD produksi mandiri penuh di luar sandbox:
 1. Unit testing suite untuk mapper, Zod schema, dan repository.
 2. Pengintegrasian/pemberdayaan `ArticleBentoGrid` & `ArticleSkeleton` di rute portal publik.
 
-## Progres Terverifikasi Fase 7 (Poin 3 & Poin 4)
-1. **Poin 3 — Konsolidasi Lockfile**:
+## Progres Terverifikasi Fase 7 (Poin 1, Poin 3 & Poin 4)
+1. **Poin 1 — Strict Mode TypeScript**:
+   - `"strict": true` diaktifkan pada `tsconfig.json`.
+   - File legacy SPA yang dijadwalkan untuk dipensiunkan pada Poin 7 (`src/main.tsx`, `src/App.tsx`, `server.ts`) ditambahkan ke array `exclude` pada `tsconfig.json` sesuai arahan arsitektur.
+   - Perbaikan ketat type safety pada komponen aktif:
+     - `src/components/LatestNewsSection.tsx`: Menambahkan `PopularNewsItemData` pada callback `onSelectPost` agar selaras dengan `SharedSidebar`.
+     - `src/components/LatestVideosSection.tsx`: Menambahkan `PopularNewsItemData` pada callback `onSelectArticle`.
+     - `src/components/author/AuthorArchivePage.tsx`: Menjaga string null safety pada `setMetaTag` untuk `og:description` dan `og:image`.
+     - `src/features/articles/actions.ts`: Menyelaraskan field `publishedAt` agar bertipe `string` (`''` jika draft) sesuai kontrak `AdminArticle`.
+   - Verifikasi sukses: `npx tsc --noEmit` (0 errors, EXIT 0), `npx next build --webpack` (104/104 static pages generated, EXIT 0).
+
+2. **Poin 3 — Konsolidasi Lockfile**:
    - Analisis dependensi kunci (`next`, `react`, `firebase`, `firebase-admin`, `motion`, `tailwindcss`) menunjukkan keselarasan semver antara `bun.lock` dan `package-lock.json`.
    - `bun.lock` dihapus secara permanen; `package-lock.json` ditetapkan sebagai satu-satunya Source of Truth.
    - Verifikasi sukses: `npm install` (bersih, EXIT 0), `npx tsc --noEmit` (0 errors, EXIT 0), `npx next build --webpack` (104/104 static pages generated, EXIT 0).

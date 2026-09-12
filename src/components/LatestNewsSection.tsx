@@ -4,6 +4,7 @@ import {
   defaultLatestNewsPosts,
   SidebarSpecialCardData,
   TrendingSidebarItem,
+  PopularNewsItemData,
 } from '../data/latestNewsData';
 import { SharedSidebar } from './SharedSidebar';
 import { NewsFeedItem } from './NewsFeedItem';
@@ -11,7 +12,7 @@ import { NewsArticle } from '../types/news';
 
 interface LatestNewsSectionProps {
   posts?: LatestNewsPost[];
-  onSelectPost?: (post: LatestNewsPost | NewsArticle | TrendingSidebarItem) => void;
+  onSelectPost?: (post: LatestNewsPost | NewsArticle | TrendingSidebarItem | PopularNewsItemData) => void;
   onSelectSpecialEvent?: (event: SidebarSpecialCardData) => void;
 }
 

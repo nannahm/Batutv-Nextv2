@@ -51,7 +51,7 @@ export async function createArticleAction(
     views: 0,
     createdAt: nowIso,
     updatedAt: nowIso,
-    publishedAt: validData.status === 'published' ? nowIso : null,
+    publishedAt: validData.status === 'published' ? nowIso : '',
   };
 
   try {

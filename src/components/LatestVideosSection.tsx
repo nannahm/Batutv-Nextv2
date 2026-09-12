@@ -5,6 +5,7 @@ import {
   defaultLatestVideos,
   TrendingSidebarItem,
   ViralTopicItem,
+  PopularNewsItemData,
 } from '../data/latestNewsData';
 import { SharedSidebar } from './SharedSidebar';
 import { NewsArticle } from '../types/news';
@@ -12,7 +13,7 @@ import { NewsArticle } from '../types/news';
 export interface LatestVideosSectionProps {
   videos?: LatestVideoItem[];
   onPlayVideo?: (video: LatestVideoItem) => void;
-  onSelectArticle?: (article: NewsArticle | TrendingSidebarItem) => void;
+  onSelectArticle?: (article: NewsArticle | TrendingSidebarItem | PopularNewsItemData) => void;
   onSelectViralTopic?: (topic: ViralTopicItem) => void;
 }
 
