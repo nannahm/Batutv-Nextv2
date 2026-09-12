@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { AdminArticle } from '@/src/types/admin';
+import { AdminArticle, AdminVideo } from '@/src/types/admin';
 import { HeroHeadlineData, defaultHeroHeadlineData, HeadlineArticleData } from '@/src/components/HeroHeadlineGrid';
 import {
   LatestNewsPost,
@@ -60,9 +60,13 @@ import { getStoredAdminSession, StoredAdminSession } from '@/src/utils/authSessi
 
 export interface ClientPortalHomeProps {
   initialArticles?: AdminArticle[];
+  initialVideos?: AdminVideo[];
 }
 
-export function ClientPortalHome({ initialArticles = [] }: ClientPortalHomeProps) {
+export function ClientPortalHome({
+  initialArticles = [],
+  initialVideos = [],
+}: ClientPortalHomeProps) {
   const router = useRouter();
 
   // 1. Initial State Derived from Server-Passed Articles (SSG/ISR with fallback)

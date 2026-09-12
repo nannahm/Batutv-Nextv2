@@ -95,3 +95,87 @@ export function toPublicVideoItem(admin: AdminVideo): PublicVideoItem {
     youtubeUrl: admin.youtubeUrl || `https://www.youtube.com/watch?v=${videoId}`,
   };
 }
+
+/**
+ * Maps an array of AdminVideo models to LatestVideoItem[] format for MainPortalFeed / LatestVideosSection.
+ * Filters for published status and sorts by publishedAt DESC.
+ */
+export function mapAdminVideosToHomepageItems(
+  videos: AdminVideo[],
+  limit: number = 6
+): {
+  id: string | number;
+  title: string;
+  category: string;
+  categorySlug?: string;
+  date: string;
+  duration: string;
+  thumbnailUrl: string;
+  videoEmbedId?: string;
+  youtubeVideoId?: string;
+  youtubeUrl?: string;
+  description?: string;
+  excerpt?: string;
+  author?: string;
+  views?: number;
+  href: string;
+  slug: string;
+}[] {
+  const published = videos.filter((v) => {
+    if (v.status !== 'published') return false;
+    if (v.publishedAt) {
+      const pubTime = new Date(v.publishedAt).getTime();
+      if (!isNaN(pubTime) && pubTime > Date.now()) return false;
+    }
+    return true;
+  });
+
+  const sorted = [...published].sort((a, b) => {
+    const timeA = a.publishedAt ? new Date(a.publishedAt).getTime() : 0;
+    const timeB = b.publishedAt ? new Date(b.publishedAt).getTime() : 0;
+    return timeB - timeA;
+  });
+
+  return sorted.slice(0, limit).map((v) => {
+    const pubDate = v.publishedAt || v.createdAt || new Date().toISOString();
+    const vidId =
+      v.youtubeVideoId ||
+      (v.youtubeUrl ? extractYouTubeVideoId(v.youtubeUrl) : null) ||
+      'dQw4w9WgXcQ';
+
+    let formattedDate = 'Baru saja';
+    try {
+      const d = new Date(pubDate);
+      if (!isNaN(d.getTime())) {
+        formattedDate = new Intl.DateTimeFormat('id-ID', {
+          day: 'numeric',
+          month: 'long',
+          year: 'numeric',
+        }).format(d);
+      }
+    } catch {
+      formattedDate = 'Baru saja';
+    }
+
+    const cleanSlug = v.slug || `video-${v.id}`;
+
+    return {
+      id: v.id,
+      title: v.title,
+      slug: cleanSlug,
+      category: v.category || 'Berita',
+      categorySlug: v.categorySlug || (v.category ? v.category.toLowerCase().replace(/[^a-z0-9]+/g, '-') : 'berita'),
+      date: formattedDate,
+      duration: v.duration || '04:00',
+      thumbnailUrl: resolveVideoThumbnail(v),
+      videoEmbedId: vidId,
+      youtubeVideoId: vidId,
+      youtubeUrl: v.youtubeUrl || `https://www.youtube.com/watch?v=${vidId}`,
+      href: `/video/${cleanSlug}`,
+      views: v.views || 0,
+      author: v.author,
+      excerpt: v.excerpt,
+      description: v.description || v.excerpt,
+    };
+  });
+}

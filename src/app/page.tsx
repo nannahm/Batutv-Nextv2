@@ -1,6 +1,7 @@
 import React from 'react';
 import type { Metadata } from 'next';
 import { fetchPublishedArticlesLive } from '@/src/features/articles/data/liveFirestoreService';
+import { fetchPublishedVideosLive } from '@/src/features/videos/data/liveFirestoreVideoService';
 import { ClientPortalHome } from '@/src/components/home/ClientPortalHome';
 
 /**
@@ -17,8 +18,16 @@ export const metadata: Metadata = {
 };
 
 export default async function RootHomePage() {
-  // Fetch up to 30 published articles from Live Firestore (with fallback to seed cache)
-  const result = await fetchPublishedArticlesLive(30);
+  // Fetch up to 30 published articles and up to 12 published videos in parallel from Live Firestore
+  const [articlesResult, videosResult] = await Promise.all([
+    fetchPublishedArticlesLive(30),
+    fetchPublishedVideosLive(12),
+  ]);
 
-  return <ClientPortalHome initialArticles={result.articles} />;
+  return (
+    <ClientPortalHome
+      initialArticles={articlesResult.articles}
+      initialVideos={videosResult.videos}
+    />
+  );
 }
