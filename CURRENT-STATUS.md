@@ -207,7 +207,7 @@ Untuk pipeline CI/CD produksi mandiri penuh di luar sandbox:
 2. **Poin 4 — npm audit fix**:
    - `npm audit` awal: 9 vulnerabilities (moderate severity) pada `qs` (via `body-parser`/`express`) dan `uuid` (via `@google-cloud/storage`, `gaxios`, `teeny-request`, `firebase-admin`).
    - `npm audit fix` (tanpa `--force`) berhasil memutakhirkan dan menutup 7 vulnerabilities (`uuid`, `gaxios`, `teeny-request`, `retry-request`).
-   - Sisa vulnerability: 2 moderate pada `qs@6.15.3` (terikat pin semver internal `express@4.22.2` dependency range `qs: ~6.15.1`). Memerlukan konfirmasi pengguna sebelum tindakan `--force` atau upgrade Express.
+   - 2 vulnerability moderate tersisa (qs via express dependency) — akan hilang otomatis saat server.ts/Express diarsipkan di Poin 7, tidak perlu tindakan terpisah.
    - Verifikasi ulang: `npx tsc --noEmit` (0 errors, EXIT 0), `npx next build --webpack` (104/104 static pages, EXIT 0).
 
 ## Technical Debt Teridentifikasi (Fase 2, 4 & 6)
