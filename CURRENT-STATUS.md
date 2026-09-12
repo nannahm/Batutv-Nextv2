@@ -255,6 +255,13 @@ Untuk pipeline CI/CD produksi mandiri penuh di luar sandbox:
    - *Tingkat Keparahan*: Low priority (tidak memblokir build / fungsionalitas utama).
    - *Rencana Mitigasi*: Pertimbangkan unifikasi di optimisasi berikutnya agar event listener client juga mengalirkan data melalui mapper yang seragam.
 
+7. **Alias Role Legacy 'admin' pada rbac.ts Tidak Selaras dengan Enum Kanonik RBAC**:
+   - *Kondisi*: Pada `src/utils/rbac.ts`, pengecekan `isSuperAdmin` mengikutsertakan string `'admin'` (`role === 'superadmin' || role === 'admin'`). Di sisi lain, sistem RBAC kanonik proyek (Fase 3 & 6) secara ketat hanya mendefinisikan 3 role kanonik: `superadmin` | `editor` | `reporter` (di mana `'admin'` merupakan representasi legacy).
+   - *Risiko Operasional*: Komponen yang menggunakan string non-kanonik `'admin'` secara tidak sengaja memperoleh wewenang setara `superadmin` di level client gatekeeper `rbac.ts`, sementara di backend Firestore Rules atau custom claims token hal ini tidak dikenali atau berbeda penanganannya.
+   - *Tingkat Keparahan*: Medium (perlu normalisasi terpadu pada saat refactor RBAC pasca-cutover).
+   - *Rencana Mitigasi*: Standarisasi seluruh kode client agar selalu melalui `toCanonicalRole()` dan menghapus toleransi string legacy `'admin'` dari `rbac.ts` secara menyeluruh setelah semua akun termigrasi.
+
+
 
 ## Status Keamanan & Lingkungan Database Firestore (Audit 2026-09-03)
 - **Status Database**: Project `batutv-next` (`(default)`) adalah **database resmi / riil BatuTV** (berisi data pengguna autentik seperti `dzakyinne@gmail.com`, dewan redaksi, dan artikel berita aktual).
