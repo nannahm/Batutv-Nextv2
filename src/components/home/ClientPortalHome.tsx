@@ -326,7 +326,7 @@ export function ClientPortalHome({ initialArticles = [] }: ClientPortalHomeProps
           onSelectPost={(item) => handleNavigateToArticle(item)}
           onSelectPopular={(item) => handleNavigateToArticle(item)}
           onSelectTrending={(item) => handleNavigateToArticle(item)}
-          onSelectArticle={(item) => handleNavigateToArticle(item as any)}
+          onSelectArticle={(item) => handleNavigateToArticle(item)}
           onSelectSpecialEvent={(_event: SidebarSpecialCardData) => {
             router.push(`/berita/dialog-nasional-batutv-2026`);
           }}
