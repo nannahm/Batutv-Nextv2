@@ -110,6 +110,7 @@ if (typeof process !== 'undefined' && process.argv[1]?.endsWith('auditSLO.ts')) 
       }
       console.log('====================================================\n');
       if (res.status === 'BREACHED') process.exit(1);
+      process.exit(0);
     })
     .catch((err) => {
       console.error('SLO audit failure:', err);

@@ -201,6 +201,7 @@ if (typeof process !== 'undefined' && process.argv[1]?.endsWith('runProductionGo
         console.log(`  #${gate.id.toString().padStart(2, '0')} [${gate.status}] [${gate.category.padEnd(20)}] ${gate.gateName}`);
       }
       console.log('================================================================\n');
+      process.exit(res.overallScore.failedChecks > 0 ? 1 : 0);
     })
     .catch((err) => {
       console.error('Production governance audit failed:', err);

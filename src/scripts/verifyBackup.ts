@@ -137,6 +137,7 @@ if (typeof process !== 'undefined' && process.argv[1]?.endsWith('verifyBackup.ts
       console.log(`  - footer/main_config             : ${res.singletonsChecked.footerConfig ? 'FOUND' : 'DEFAULT/INITIAL'}`);
       console.log(`  - system_settings/security_config: ${res.singletonsChecked.systemSettings ? 'FOUND' : 'DEFAULT/INITIAL'}`);
       console.log('====================================================\n');
+      process.exit(res.status === 'FAIL' ? 1 : 0);
     })
     .catch((err) => {
       console.error('Backup verification error:', err);

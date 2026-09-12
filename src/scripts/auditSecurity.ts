@@ -88,8 +88,10 @@ export async function runSecurityAudit(): Promise<SecurityAuditResult> {
   const rep1User: any = { name: 'Rep 1', authorId: 'auth_rep1' };
   const rep2User: any = { name: 'Rep 2', authorId: 'auth_rep2' };
 
-  const rep1CanEditOwn = checkArticleEditPermission('reporter', mockArticle, rep1User).allowed;
-  const rep2CantEditOther = !checkArticleEditPermission('reporter', mockArticle, rep2User).allowed;
+  const rep1Perm = checkArticleEditPermission('reporter', mockArticle, rep1User);
+  const rep2Perm = checkArticleEditPermission('reporter', mockArticle, rep2User);
+  const rep1CanEditOwn = rep1Perm.allowed && !rep1Perm.isReadOnly;
+  const rep2CantEditOther = rep2Perm.isReadOnly === true;
   const ownershipPass = rep1CanEditOwn && rep2CantEditOther;
 
   checks.push({
@@ -137,6 +139,7 @@ if (typeof process !== 'undefined' && process.argv[1]?.endsWith('auditSecurity.t
       }
       console.log('====================================================\n');
       if (res.status === 'FAIL') process.exit(1);
+      process.exit(0);
     })
     .catch((err) => {
       console.error('Security audit failure:', err);

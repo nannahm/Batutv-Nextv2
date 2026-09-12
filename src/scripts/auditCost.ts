@@ -115,6 +115,7 @@ if (typeof process !== 'undefined' && process.argv[1]?.endsWith('auditCost.ts'))
       }
       console.log('====================================================\n');
       if (res.status === 'COST_HIGH_RISK') process.exit(1);
+      process.exit(0);
     })
     .catch((err) => {
       console.error('Cost audit failure:', err);

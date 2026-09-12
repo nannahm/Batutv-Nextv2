@@ -127,6 +127,7 @@ if (typeof process !== 'undefined' && process.argv[1]?.endsWith('auditCapacity.t
       }
       console.log('====================================================\n');
       if (res.status === 'CRITICAL') process.exit(1);
+      process.exit(0);
     })
     .catch((err) => {
       console.error('Capacity audit failure:', err);

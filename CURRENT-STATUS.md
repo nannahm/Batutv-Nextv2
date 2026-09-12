@@ -30,7 +30,16 @@ basis kode yang ada, mengikuti panduan migrasi di `ARCHITECTURE.md` dan `DECISIO
 | **Fase 4** | Videos & Media (YouTube Integration, Player, Storage) | 🟢 Selesai | 100% |
 | **Fase 5** | Taksonomi (Categories, Tags, Archive Routing) | 🟢 Selesai | 100% |
 | **Fase 6** | Pages, Navigation, Settings, Users (Static Pages, Menus, Sync) | 🟢 Selesai | 100% |
-| **Fase 7** | Cutover, 23 Audit Scripts, Final Cleanup | ⚪ Belum Dimulai | 0% |
+| **Fase 7** | Cutover, 23 Audit Scripts, Final Cleanup | 🟡 Sedang Berjalan | Sub-Task 1 Selesai (23/23 Audit Scripts Verified) |
+
+## Catatan Integritas Metrik Audit & Simulasi (Fase 7 Sub-Task 1)
+> **PENTING UNTUK DOKUMENTASI & SESI AI BERIKUTNYA**:
+> Seluruh metrik operasional yang dilaporkan oleh 23 skrip audit (seperti *"Availability 99.99%"*, *"Recovery Point Objective (RPO) 4.2h"*, *"Recovery Time Objective (RTO) ~12m"*, *"Disaster Recovery Score 100%"*, dan *"Error Budget 90%"*) berasal dari **skrip audit internal, benchmark sintetis, dan konstanta uji invariant arsitektural**, **BUKAN dari data pemantauan operasional produksi historis nyata**.
+>
+> Hal ini karena portal berita BatuTV ini berada dalam tahap migrasi dan belum memiliki riwayat logging/uptime jangka panjang di infrastruktur produksi aktif. Rincian pengujian:
+> - **Simulasi Ketersediaan & SLO (`auditSLO.ts`, `auditErrorBudget.ts`)**: Menggunakan konstanta target SLA kontrak (99.99%) dan latensi diukur melalui simulasi load test sintetis (900 iterasi request internal via loop `runIntegrityAudit.ts`).
+> - **Disaster Recovery & Backup (`verifyBackup.ts`, `auditDisasterRecovery.ts`)**: Angka usia backup (4.2h) dan estimasi pemulihan (12m) merupakan benchmark simulasi bucket Cloud Storage. Validasi riil yang berjalan langsung terhadap Firestore adalah inspeksi ke-14 koleksi kanonikal database aktif.
+> - **Chaos Engineering (`runChaosAudit.ts`)**: Berjalan dalam mode aman `DRY_RUN_SIMULATION` (100% Non-Destructive) untuk memverifikasi branching penanganan error, isolasi fallback cache, dan resilience policy tanpa mengganggu server produksi nyata.
 
 ## Progres Terverifikasi Fase 3 (Authentication & RBAC)
 1. **Sub-Task 1 (Setup Firebase Admin SDK Server-Only)**:

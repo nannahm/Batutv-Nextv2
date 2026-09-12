@@ -270,6 +270,7 @@ if (typeof process !== 'undefined' && process.argv[1]?.endsWith('runIntegrityAud
       console.log(`  - p95 Latency       : ${res.loadTestMetrics.p95LatencyMs} ms`);
       console.log(`  - p99 Latency       : ${res.loadTestMetrics.p99LatencyMs} ms`);
       console.log('====================================================\n');
+      process.exit(res.failedTests > 0 ? 1 : 0);
     })
     .catch((err) => {
       console.error('Integrity audit error:', err);
