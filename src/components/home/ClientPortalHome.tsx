@@ -19,7 +19,7 @@ import {
 import { getStoredArticles } from '@/src/data/newsAdminStore';
 import { getPublishedVideosForHomepage } from '@/src/data/videoAdminStore';
 import { generateTagSlug } from '@/src/data/tagAdminStore';
-import { resolveArticleSlug } from '@/src/utils/slugResolver';
+import { resolveArticleSlug, resolveArticleHref } from '@/src/utils/slugResolver';
 import {
   categoriesData,
   hotTopicsData,
@@ -218,10 +218,11 @@ export function ClientPortalHome({ initialArticles = [] }: ClientPortalHomeProps
     router.push(`/tag/${tagSlug}`);
   };
 
-  const handleNavigateToArticle = (slugOrHref: string) => {
-    const targetSlug = resolveArticleSlug(slugOrHref);
-    if (targetSlug) {
-      router.push(`/berita/${targetSlug}`);
+  const handleNavigateToArticle = (item?: { slug?: string | null; id?: string | number | null; href?: string | null } | null) => {
+    if (!item) return;
+    const href = resolveArticleHref(item.slug, item.id, item.href);
+    if (href) {
+      router.push(href);
     }
   };
 
@@ -289,12 +290,7 @@ export function ClientPortalHome({ initialArticles = [] }: ClientPortalHomeProps
         {/* S03 — HERO / HEADLINE GRID */}
         <HeroHeadlineGrid
           data={heroHeadlineData}
-          onSelectArticle={(item) => {
-            const targetSlug = ('slug' in item && item.slug) ? item.slug : resolveArticleSlug(String(item.id || ('href' in item ? (item as any).href : '')));
-            if (targetSlug) {
-              router.push(`/berita/${targetSlug}`);
-            }
-          }}
+          onSelectArticle={(item) => handleNavigateToArticle(item)}
           onNavigateMore={() => router.push('/tren')}
         />
 
@@ -327,30 +323,10 @@ export function ClientPortalHome({ initialArticles = [] }: ClientPortalHomeProps
             const targetSlug = videoItem.slug || videoItem.id || 'menkes-ajak-anggota-dpr-bantu-warga-ntt';
             router.push(`/video/${targetSlug}`);
           }}
-          onSelectPost={(item) => {
-            const targetSlug = item.slug || resolveArticleSlug(String(item.id || ('href' in item ? (item as any).href : '')));
-            if (targetSlug) {
-              router.push(`/berita/${targetSlug}`);
-            }
-          }}
-          onSelectPopular={(item) => {
-            const targetSlug = item.slug || resolveArticleSlug(String(item.id || ('href' in item ? (item as any).href : '')));
-            if (targetSlug) {
-              router.push(`/berita/${targetSlug}`);
-            }
-          }}
-          onSelectTrending={(item) => {
-            const targetSlug = item.slug || resolveArticleSlug(String(item.id || ('href' in item ? (item as any).href : '')));
-            if (targetSlug) {
-              router.push(`/berita/${targetSlug}`);
-            }
-          }}
-          onSelectArticle={(item) => {
-            const targetSlug = ('slug' in item && (item as any).slug) ? (item as any).slug : resolveArticleSlug(String(item.id || (item as any).href || ''));
-            if (targetSlug) {
-              router.push(`/berita/${targetSlug}`);
-            }
-          }}
+          onSelectPost={(item) => handleNavigateToArticle(item)}
+          onSelectPopular={(item) => handleNavigateToArticle(item)}
+          onSelectTrending={(item) => handleNavigateToArticle(item)}
+          onSelectArticle={(item) => handleNavigateToArticle(item as any)}
           onSelectSpecialEvent={(_event: SidebarSpecialCardData) => {
             router.push(`/berita/dialog-nasional-batutv-2026`);
           }}
