@@ -141,15 +141,12 @@ export const HeroHeadlineGrid: React.FC<HeroHeadlineGridProps> = ({
       return;
     }
 
-    // Only prevent default if there is an onSelectArticle handler and href is not a standard full navigation
-    // or if href is not valid/defined
-    if (!item.href || item.href === '#') {
+    // If href is missing or placeholder '#', fall back to onSelectArticle handler with preventDefault
+    if ((!item.href || item.href === '#') && onSelectArticle) {
       e.preventDefault();
-    }
-
-    if (onSelectArticle) {
       onSelectArticle(item);
     }
+    // If href is valid, let browser handle native navigation without triggering onSelectArticle (avoids double-navigation)
   };
 
   return (

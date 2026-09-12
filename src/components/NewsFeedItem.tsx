@@ -38,14 +38,12 @@ export const NewsFeedItem: React.FC<NewsFeedItemProps> = ({
       return;
     }
 
-    // Only prevent default if href is not valid/defined
-    if (!itemHref || itemHref === '#') {
+    // If href is missing or placeholder '#', fall back to onSelect handler with preventDefault
+    if ((!itemHref || itemHref === '#') && onSelect) {
       e.preventDefault();
-    }
-
-    if (onSelect) {
       onSelect(post);
     }
+    // If href is valid, let browser handle native navigation without triggering onSelect (avoids double-navigation)
   };
 
   return (
