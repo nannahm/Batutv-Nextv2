@@ -18,6 +18,7 @@ import {
 } from '@/src/utils/newsFormatters';
 import { getStoredArticles } from '@/src/data/newsAdminStore';
 import { getPublishedVideosForHomepage } from '@/src/data/videoAdminStore';
+import { mapAdminVideosToHomepageItems } from '@/src/features/videos/adapters/videoMapper';
 import { generateTagSlug } from '@/src/data/tagAdminStore';
 import { resolveArticleSlug, resolveArticleHref } from '@/src/utils/slugResolver';
 import {
@@ -86,6 +87,14 @@ export function ClientPortalHome({
     return mapAdminArticlesToHeroData(local);
   });
 
+  // Initial State for Homepage Videos derived from server-passed initialVideos (Firestore Live)
+  const [homepageVideos, setHomepageVideos] = useState<LatestVideoItem[]>(() => {
+    if (initialVideos && initialVideos.length > 0) {
+      return mapAdminVideosToHomepageItems(initialVideos, 6);
+    }
+    return getPublishedVideosForHomepage(6);
+  });
+
   // UI Interactive States
   const [activeCategory, setActiveCategory] = useState<string>('home');
   const [activeTopic, setActiveTopic] = useState<string>('');
@@ -146,8 +155,13 @@ export function ClientPortalHome({
       const articles = getStoredArticles();
       setNewsFeedPosts(mapAdminArticlesToFeedPosts(articles));
       setHeroHeadlineData(mapAdminArticlesToHeroData(articles));
+      setHomepageVideos(getPublishedVideosForHomepage(6));
       setMaintenanceConfig(getStoredMaintenanceConfig());
       setAuthAdmin(getStoredAdminSession());
+    };
+
+    const refreshVideos = () => {
+      setHomepageVideos(getPublishedVideosForHomepage(6));
     };
 
     // Apply saved site settings
@@ -172,6 +186,7 @@ export function ClientPortalHome({
 
     // Register listeners
     window.addEventListener('batutv_news_updated', refreshData);
+    window.addEventListener('batutv_videos_updated', refreshVideos);
     window.addEventListener(SITE_SETTINGS_UPDATED_EVENT, handleSiteSettingsUpdate);
     window.addEventListener(SYSTEM_MAINTENANCE_UPDATED_EVENT, handleMaintenanceUpdate);
     window.addEventListener('storage', refreshData);
@@ -179,6 +194,7 @@ export function ClientPortalHome({
     // Guaranteed cleanup
     return () => {
       window.removeEventListener('batutv_news_updated', refreshData);
+      window.removeEventListener('batutv_videos_updated', refreshVideos);
       window.removeEventListener(SITE_SETTINGS_UPDATED_EVENT, handleSiteSettingsUpdate);
       window.removeEventListener(SYSTEM_MAINTENANCE_UPDATED_EVENT, handleMaintenanceUpdate);
       window.removeEventListener('storage', refreshData);
@@ -301,7 +317,7 @@ export function ClientPortalHome({
         {/* SO4 — SO6 UNIFIED MAIN PORTAL FEED & SIDEBAR GROUP */}
         <MainPortalFeed
           posts={newsFeedPosts}
-          videos={getPublishedVideosForHomepage(6)}
+          videos={homepageVideos}
           onPlayShort={(short) => {
             const foundVideo = videoNewsData.find((v) => v.id === short.id || v.title === short.title);
             if (foundVideo) {
