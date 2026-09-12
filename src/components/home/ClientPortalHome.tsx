@@ -227,7 +227,7 @@ export function ClientPortalHome({ initialArticles = [] }: ClientPortalHomeProps
 
   // Maintenance Mode check for public visitors
   if (maintenanceConfig.isEnabled && !authAdmin) {
-    return <MaintenancePage onNavigateToLogin={() => router.push('/batutv-control/login')} />;
+    return <MaintenancePage onNavigateToLogin={() => router.push('/login')} />;
   }
 
   return (
@@ -253,7 +253,7 @@ export function ClientPortalHome({ initialArticles = [] }: ClientPortalHomeProps
           setIsSearchOpen(true);
         }}
         onOpenUserAccount={() => {
-          router.push(authAdmin ? '/batutv-control/dashboard' : '/batutv-control/login');
+          router.push(authAdmin ? '/batutv-control' : '/login');
         }}
         currentUser={authAdmin}
         onOpenMenu={() => setIsMobileMenuOpen(true)}
@@ -270,7 +270,7 @@ export function ClientPortalHome({ initialArticles = [] }: ClientPortalHomeProps
         onNavigate={(path) => router.push(path)}
         onGoHome={handleGoHome}
         onOpenLiveStream={() => setIsLiveStreamOpen(true)}
-        onOpenUserAccount={() => router.push(authAdmin ? '/batutv-control/dashboard' : '/batutv-control/login')}
+        onOpenUserAccount={() => router.push(authAdmin ? '/batutv-control' : '/login')}
         onOpenSearch={() => {
           setSearchInitialQuery('');
           setIsSearchOpen(true);
@@ -290,14 +290,9 @@ export function ClientPortalHome({ initialArticles = [] }: ClientPortalHomeProps
         <HeroHeadlineGrid
           data={heroHeadlineData}
           onSelectArticle={(item) => {
-            const found = allNewsArticles.find(
-              (a) => a.slug === item.slug || a.id === item.id || a.title.includes(item.title.slice(0, 15))
-            );
-            if (found) {
-              setSelectedArticle(found);
-              router.push(`/berita/${found.slug}`);
-            } else {
-              handleNavigateToArticle(item.slug || String(item.id) || ('href' in item ? String((item as any).href) : ''));
+            const targetSlug = ('slug' in item && item.slug) ? item.slug : resolveArticleSlug(String(item.id || ('href' in item ? (item as any).href : '')));
+            if (targetSlug) {
+              router.push(`/berita/${targetSlug}`);
             }
           }}
           onNavigateMore={() => router.push('/tren')}
@@ -333,47 +328,27 @@ export function ClientPortalHome({ initialArticles = [] }: ClientPortalHomeProps
             router.push(`/video/${targetSlug}`);
           }}
           onSelectPost={(item) => {
-            const found = allNewsArticles.find(
-              (a) => a.slug === item.slug || a.id === item.id || a.title.includes(item.title.slice(0, 15))
-            );
-            if (found) {
-              setSelectedArticle(found);
-              router.push(`/berita/${found.slug}`);
-            } else {
-              handleNavigateToArticle(item.slug || String(item.id) || ('href' in item ? String((item as any).href) : ''));
+            const targetSlug = item.slug || resolveArticleSlug(String(item.id || ('href' in item ? (item as any).href : '')));
+            if (targetSlug) {
+              router.push(`/berita/${targetSlug}`);
             }
           }}
           onSelectPopular={(item) => {
-            const found = allNewsArticles.find(
-              (a) => a.slug === item.slug || a.id === item.id || a.title.includes(item.title.slice(0, 15))
-            );
-            if (found) {
-              setSelectedArticle(found);
-              router.push(`/berita/${found.slug}`);
-            } else {
-              handleNavigateToArticle(item.slug || String(item.id) || ('href' in item ? String((item as any).href) : ''));
+            const targetSlug = item.slug || resolveArticleSlug(String(item.id || ('href' in item ? (item as any).href : '')));
+            if (targetSlug) {
+              router.push(`/berita/${targetSlug}`);
             }
           }}
           onSelectTrending={(item) => {
-            const found = allNewsArticles.find(
-              (a) => a.slug === item.slug || a.id === item.id || a.title.includes(item.title.slice(0, 15))
-            );
-            if (found) {
-              setSelectedArticle(found);
-              router.push(`/berita/${found.slug}`);
-            } else {
-              handleNavigateToArticle(item.slug || String(item.id) || ('href' in item ? String((item as any).href) : ''));
+            const targetSlug = item.slug || resolveArticleSlug(String(item.id || ('href' in item ? (item as any).href : '')));
+            if (targetSlug) {
+              router.push(`/berita/${targetSlug}`);
             }
           }}
           onSelectArticle={(item) => {
-            const found = allNewsArticles.find(
-              (a) => a.slug === (item as any).slug || a.id === item.id || a.title.includes(item.title.slice(0, 15))
-            );
-            if (found) {
-              setSelectedArticle(found);
-              router.push(`/berita/${found.slug}`);
-            } else {
-              handleNavigateToArticle((item as any).slug || item.id || (item as any).href);
+            const targetSlug = ('slug' in item && (item as any).slug) ? (item as any).slug : resolveArticleSlug(String(item.id || (item as any).href || ''));
+            if (targetSlug) {
+              router.push(`/berita/${targetSlug}`);
             }
           }}
           onSelectSpecialEvent={(_event: SidebarSpecialCardData) => {
@@ -391,7 +366,7 @@ export function ClientPortalHome({ initialArticles = [] }: ClientPortalHomeProps
         categories={categoriesData}
         onSelectCategory={handleSelectCategory}
         onOpenLiveStream={() => setIsLiveStreamOpen(true)}
-        onNavigateAdmin={() => router.push(authAdmin ? '/batutv-control/dashboard' : '/batutv-control/login')}
+        onNavigateAdmin={() => router.push(authAdmin ? '/batutv-control' : '/login')}
         onNavigate={(path) => router.push(path)}
       />
 
@@ -475,7 +450,7 @@ export function ClientPortalHome({ initialArticles = [] }: ClientPortalHomeProps
         }}
         hotTopics={hotTopicsData}
         onSelectTopic={handleSelectTopic}
-        onNavigateLogin={() => router.push(authAdmin ? '/batutv-control/dashboard' : '/batutv-control/login')}
+        onNavigateLogin={() => router.push(authAdmin ? '/batutv-control' : '/login')}
       />
     </div>
   );
