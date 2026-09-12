@@ -14,3 +14,4 @@ coverage/
 !.env.example
 *.tsbuildinfo
 
+bun.lock
