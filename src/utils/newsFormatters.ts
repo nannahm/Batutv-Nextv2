@@ -148,14 +148,58 @@ export function mapAdminArticleToHeadlineData(art: AdminArticle): HeadlineArticl
   };
 }
 
-// Helper to determine if an article is active & published
+// Helper: Determine if an article is currently live and eligible for public display (exact match with newsAdminStore)
 export function isArticleLive(art: AdminArticle): boolean {
-  if (art.status !== 'published') return false;
-  if (art.publishedAt) {
-    const pubTime = getArticlePublishedTimestamp(art);
-    if (pubTime > Date.now()) return false;
+  if (art.status === 'trash' || art.status === 'draft') return false;
+  const now = Date.now();
+
+  if (art.status === 'published') {
+    if (art.publishedAt) {
+      const pubTime = getArticlePublishedTimestamp(art);
+      if (pubTime > now) return false; // Future scheduled publish time
+    }
+    return true;
   }
-  return true;
+
+  if (art.status === 'scheduled') {
+    if (art.publishedAt) {
+      const schTime = getArticlePublishedTimestamp(art);
+      if (schTime <= now) return true; // Scheduled time has arrived
+    }
+    return false;
+  }
+
+  return false;
+}
+
+/**
+ * Filter and sort hero headline articles directly from an array of AdminArticle[].
+ * Exactly matches editorial headline logic in newsAdminStore.ts (lines 308-333).
+ */
+export function getHeroHeadlineArticlesFromList(articles: AdminArticle[]): AdminArticle[] {
+  const now = Date.now();
+
+  return articles
+    .filter((a) => {
+      // 1. Must be live (published or scheduled that reached publish time)
+      if (!isArticleLive(a)) return false;
+      // 2. Must be explicitly flagged as headline by editorial
+      if (!a.isHeadline) return false;
+      // 3. Must not have passed its headlineUntil expiration
+      if (a.headlineUntil) {
+        const expTime = new Date(a.headlineUntil).getTime();
+        if (!isNaN(expTime) && expTime < now) return false;
+      }
+      return true;
+    })
+    .sort((a, b) => {
+      // Priority 1: Editorial Position (1..5)
+      const posA = a.headlinePosition || 999;
+      const posB = b.headlinePosition || 999;
+      if (posA !== posB) return posA - posB;
+      // Priority 2: Published date DESC (latest first)
+      return getArticlePublishedTimestamp(b) - getArticlePublishedTimestamp(a);
+    });
 }
 
 /**
@@ -220,28 +264,7 @@ export function mapAdminArticlesToFeedPosts(articles: AdminArticle[], limit?: nu
  * dengan backfill otomatis bila headline kurang dari 4.
  */
 export function mapAdminArticlesToHeroData(articles: AdminArticle[]): HeroHeadlineData {
-  const now = Date.now();
-
-  const headlineCandidates = articles
-    .filter((a) => {
-      if (a.status !== 'published') return false;
-      if (!a.isHeadline) return false;
-      if (a.publishedAt) {
-        const pubTime = getArticlePublishedTimestamp(a);
-        if (pubTime > now) return false;
-      }
-      if (a.headlineUntil) {
-        const expTime = new Date(a.headlineUntil).getTime();
-        if (!isNaN(expTime) && expTime < now) return false;
-      }
-      return true;
-    })
-    .sort((a, b) => {
-      const posA = a.headlinePosition || 999;
-      const posB = b.headlinePosition || 999;
-      if (posA !== posB) return posA - posB;
-      return getArticlePublishedTimestamp(b) - getArticlePublishedTimestamp(a);
-    });
+  const headlineCandidates = getHeroHeadlineArticlesFromList(articles);
 
   if (headlineCandidates.length === 0) {
     const livePublished = articles
