@@ -250,6 +250,11 @@ Untuk pipeline CI/CD produksi mandiri penuh di luar sandbox:
      3. Konfirmasi eksplisit dari owner project sebelum whitelist dihapus dan rules di-deploy.
    - **Status**: DITUNDA, bukan dibatalkan. Dicatat sebagai item terbuka pasca-Fase 7.
 
+6. **Inkonsistensi Jalur Data Video Section Homepage (Initial SSR vs Client Event Refresh)**:
+   - *Kondisi*: Video section homepage: initial SSR render pakai `mapAdminVideosToHomepageItems` (Firestore live), tapi refresh client-side setelah event `batutv_videos_updated` masih pakai `getPublishedVideosForHomepage()` (`videoAdminStore.ts` / localStorage) — berpotensi sedikit perbedaan format antara render awal vs setelah update.
+   - *Tingkat Keparahan*: Low priority (tidak memblokir build / fungsionalitas utama).
+   - *Rencana Mitigasi*: Pertimbangkan unifikasi di optimisasi berikutnya agar event listener client juga mengalirkan data melalui mapper yang seragam.
+
 
 ## Status Keamanan & Lingkungan Database Firestore (Audit 2026-09-03)
 - **Status Database**: Project `batutv-next` (`(default)`) adalah **database resmi / riil BatuTV** (berisi data pengguna autentik seperti `dzakyinne@gmail.com`, dewan redaksi, dan artikel berita aktual).
