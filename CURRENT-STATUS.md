@@ -233,6 +233,12 @@ Untuk pipeline CI/CD produksi mandiri penuh di luar sandbox:
    - *Kondisi*: Pada `setUserRoleAction` (`src/features/auth/serverActions.ts`), whitelist email hardcoded (`SUPERADMIN_EMAILS`) masih digunakan sebagai salah satu penentu akses untuk menjalankan aksi penyematan peran, mendampingi pengecekan custom claim `hasSuperadminClaim`.
    - *Risiko Operasional*: Ini persis pola transisi D-017 yang sebelumnya ditinggalkan sementara di Fase 3 saat transisi ke custom claims. Jika di masa depan terdapat superadmin baru di luar daftar email hardcoded ini (misalnya pergantian kepemilikan project atau penambahan owner), mereka tidak akan dapat menjalankan `setUserRoleAction` meskipun custom claim mereka sudah `superadmin` — kecuali kode ini di-redeploy manual untuk menambahkan email mereka ke daftar. Kondisi ini bertentangan dengan tujuan arsitektur custom claims yang dirancang agar penambahan dan pencabutan admin tidak memerlukan redeploy kode.
    - *Rencana Mitigasi*: Rencanakan penghapusan whitelist ini di Fase 7 setelah dipastikan seluruh alur custom claims (`hasSuperadminClaim`) berjalan stabil tanpa perlu fallback email.
+   - **Update Keputusan (Fase 7)**: Penghapusan whitelist SUPERADMIN_EMAILS DITUNDA secara sadar sampai setelah Fase 7 selesai — bukan karena teknis sulit, tapi karena baru 1 dari beberapa akun staf (dzakyinne@gmail.com) yang benar-benar teruji dengan custom claims di real login flow (4 akun staf redaksi lain masih berstatus seed-only, belum pernah login). Menghapus fallback email sekarang berisiko mengunci akses total kalau custom claims bermasalah, tanpa jalan masuk cadangan.
+   - **Syarat sebelum dieksekusi nanti**:
+     1. Minimal 2-3 akun staf sudah onboarding penuh (custom claims aktif + pernah login sukses lewat SOP di Sub-Task 7).
+     2. Owner project sudah login-test berkali-kali dalam kondisi berbeda (browser berbeda, setelah logout-login ulang) untuk memastikan custom claims persisten.
+     3. Konfirmasi eksplisit dari owner project sebelum whitelist dihapus dan rules di-deploy.
+   - **Status**: DITUNDA, bukan dibatalkan. Dicatat sebagai item terbuka pasca-Fase 7.
 
 
 ## Status Keamanan & Lingkungan Database Firestore (Audit 2026-09-03)
