@@ -297,3 +297,55 @@ Catatan teknis awal (untuk referensi kalau nanti benar-benar dikerjakan):
   import script atau sinkronisasi berkelanjutan, dan mapping field yang tidak 1:1.
 
 **Status**: Tidak dijadwalkan. Tidak ada tindakan yang perlu diambil sekarang.
+
+### Kemungkinan Migrasi Database dari Firestore ke PostgreSQL (via Supabase)
+
+Pemilik project menyampaikan rencana untuk mempertimbangkan migrasi database dari
+Firebase Firestore ke PostgreSQL, menggunakan Supabase sebagai penyedia terkelola
+(alasan utama: biaya lebih rendah dan predictable dibanding Firestore untuk tahap
+pengembangan, plus ekosistem yang mirip — Auth, Storage, Realtime — dalam satu
+paket). Rencana untuk hosting juga mengarah ke VPS (bukan platform serverless
+seperti Vercel), meski ini keputusan terpisah dari migrasi database.
+
+**Ini BUKAN bagian dari 7 fase migrasi Next.js yang sedang berjalan** — dicatat
+sebagai kebutuhan potensial di masa depan (tentatif "Fase 8"), dieksekusi setelah
+Fase 7 (Cutover) benar-benar tuntas dan stabil di production.
+
+**Mengapa migrasi ini relatif lebih mudah dibanding proyek migrasi framework:**
+Arsitektur project ini sejak awal menerapkan *repository pattern* (D-003) — setiap
+domain (articles, videos, taxonomy, pages, settings, users) punya interface
+(`IArticleRepository`, dst.) sebagai satu-satunya pintu masuk data. Kode UI, Server
+Component, dan Server Action tidak pernah memanggil Firestore SDK secara langsung.
+Secara teori, migrasi ke Postgres berarti menulis implementasi baru di balik
+interface yang sama, tanpa mengubah kode di lapisan atas.
+
+**Kewaspadaan yang perlu diperhatikan (bukan tindakan sekarang):**
+1. Field bertipe *array of strings* (mis. `tags: string[]` pada artikel,
+   `contentTypes` pada taksonomi) akan butuh dipetakan ke tabel relasi/junction
+   terpisah di skema Postgres — bukan sekadar kolom array.
+2. Custom claims RBAC (role di Firebase Auth token) — Supabase Auth punya konsep
+   serupa (JWT claims), tapi implementasinya berbeda dan perlu ditulis ulang
+   sepenuhnya, termasuk seluruh alur session cookie httpOnly yang sudah dibangun
+   di Fase 3.
+3. Row Level Security (RLS) di Postgres/Supabase konsepnya mirip `firestore.rules`
+   (aturan akses di level baris data), tapi sintaksnya SQL policy — seluruh rules
+   yang sudah ditulis (termasuk perbaikan insiden D-017) perlu ditulis ulang total.
+4. Real-time listener (`onSnapshot`, dipakai di pola D-025 untuk store SPA admin)
+   perlu porting logic ke Supabase Realtime (berbasis Postgres logical
+   replication/WAL) — model konsepnya berbeda.
+
+**Langkah praktis kalau nanti benar-benar dikerjakan:**
+1. Desain skema relasional (tabel `articles`, `categories`, `tags`,
+   `article_tags`, dst.) berdasarkan struktur data yang sudah ada di Firestore.
+2. Gunakan tool migrasi resmi Supabase (`firebase-to-supabase`) untuk transformasi
+   dan impor data.
+3. Tulis ulang setiap implementasi repository (`postgresArticleRepository`, dst.)
+   dengan backend Supabase/Postgres, sambil mempertahankan interface yang sama
+   persis dengan yang dipakai sekarang.
+4. Migrasi bertahap per-domain (mirip pola vertical-slice yang dipakai di migrasi
+   Next.js ini) — articles dulu, baru videos, baru taxonomy, dst.
+5. Uji paralel (dual-write atau shadow-read) sebelum cutover penuh ke Postgres.
+
+**Status**: Tidak dijadwalkan. Tidak ada tindakan yang perlu diambil sekarang.
+Referensi Supabase pricing (per riset awal): Free tier (500MB DB, 50rb MAU, 1GB
+storage), Pro $25/bulan (8GB DB, 100GB storage, 250GB bandwidth).
