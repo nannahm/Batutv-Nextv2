@@ -278,6 +278,20 @@ Untuk pipeline CI/CD produksi mandiri penuh di luar sandbox:
    - *Tingkat Keparahan*: Medium (perlu normalisasi terpadu pada saat refactor RBAC pasca-cutover).
    - *Rencana Mitigasi*: Standarisasi seluruh kode client agar selalu melalui `toCanonicalRole()` dan menghapus toleransi string legacy `'admin'` dari `rbac.ts` secara menyeluruh setelah semua akun termigrasi.
 
+8. **Admin Store Eager Loading & Realtime Subscription in Public Bundle**:
+   - *Kondisi*: 
+     1. Modul admin store (`newsAdminStore`, `mediaAdminStore`, `userAdminStore`) mengeksekusi `onSnapshot` / real-time sync Firestore secara eager di top-level scope saat file dievaluasi di browser (`typeof window !== 'undefined'`), tanpa memeriksa status autentikasi atau rute aktif (`/batutv-control/*`).
+     2. Komponen publik (`ClientPortalHome.tsx`) mengimpor helper publik langsung dari modul admin (`videoAdminStore` dan `systemSettingsStore`), yang secara transitif menyeret `mediaAdminStore`, `rbac.ts`, dan `userAdminStore` ke dalam bundle client publik.
+   - *Risiko*: 
+     - **Bukan celah keamanan**: `firestore.rules` menolak akses publik dengan aman (`Missing or insufficient permissions`).
+     - **Inefisiensi Kuota & Resource**: Setiap pengunjung publik memicu 3 percobaan koneksi Firestore yang ditolak, membebani read request/connection attempt tanpa manfaat.
+     - **Bundle Bloat**: Modul admin dan RBAC matrix ikut terunduh oleh pengunjung biasa.
+   - *Tingkat Keparahan*: Low-Medium (Beban kuota & bundle size; fungsionalitas dan keamanan tetap aman).
+   - *Rencana Mitigasi (Di luar Fase 7)*:
+     - Pindahkan inisialisasi listener real-time dari top-level module ke dalam lifecycle yang hanya dipanggil di dalam layout dashboard admin (`DashboardLayout.tsx`).
+     - Pisahkan utilitas pembacaan publik ke modul publik khusus (misal `features/articles/public`, `features/videos/public`) agar terisolasi dari operasi mutasi & repository admin.
+   - *Status*: DITUNDA secara sadar (di luar cakupan Fase 7; disiapkan sebagai proposal refactor multi-file terpisah).
+
 
 
 ## Status Keamanan & Lingkungan Database Firestore (Audit 2026-09-03)
