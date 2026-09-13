@@ -16,7 +16,11 @@ import {
 } from 'lucide-react';
 import { CategoryItem } from '../types/news';
 import { NavItemWithChildren } from '../types/navigation';
-import { getPublicNavigationTree, isNavItemActive } from '../data/navigationStore';
+import {
+  getPublicNavigationTree,
+  getInitialNavigationTree,
+  isNavItemActive,
+} from '../data/navigationStore';
 
 interface MobileMenuProps {
   isOpen: boolean;
@@ -44,7 +48,7 @@ export const MobileMenu: React.FC<MobileMenuProps> = ({
   onSelectTopic,
   onNavigateLogin,
 }) => {
-  const [navTree, setNavTree] = useState<NavItemWithChildren[]>(() => getPublicNavigationTree());
+  const [navTree, setNavTree] = useState<NavItemWithChildren[]>(() => getInitialNavigationTree());
   const [expandedParents, setExpandedParents] = useState<Record<string, boolean>>({
     'nav-news': true, // Keep primary news expanded by default for instant discovery
   });

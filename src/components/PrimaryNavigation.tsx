@@ -3,11 +3,18 @@ import { Home, ChevronDown, Search, Radio, User } from 'lucide-react';
 import { NavItemWithChildren, SubNavigationItem, SubNavSettings } from '../types/navigation';
 import {
   getPublicNavigationTree,
+  getInitialNavigationTree,
   isNavItemActive,
   getPublicSubNavItems,
   getStoredSubNavSettings,
+  INITIAL_SUB_NAVIGATION_DATA,
+  INITIAL_SUB_NAV_SETTINGS,
 } from '../data/navigationStore';
-import { getStoredSiteSettings, SITE_SETTINGS_UPDATED_EVENT } from '../data/siteSettingsStore';
+import {
+  getStoredSiteSettings,
+  SITE_SETTINGS_UPDATED_EVENT,
+  INITIAL_SITE_SETTINGS,
+} from '../data/siteSettingsStore';
 import { SiteSettings } from '../types/siteSettings';
 
 export interface PrimaryNavItem {
@@ -53,10 +60,11 @@ export const PrimaryNavigation: React.FC<PrimaryNavigationProps> = ({
   onOpenUserAccount,
   onOpenSearch,
 }) => {
-  const [navTree, setNavTree] = useState<NavItemWithChildren[]>(() => getPublicNavigationTree());
-  const [subNavItems, setSubNavItems] = useState<SubNavigationItem[]>(() => getPublicSubNavItems());
-  const [subNavSettings, setSubNavSettings] = useState<SubNavSettings>(() => getStoredSubNavSettings());
-  const [siteSettings, setSiteSettings] = useState<SiteSettings>(() => getStoredSiteSettings());
+  // Deterministic baseline state for safe SSR & hydration (prevents mismatch)
+  const [navTree, setNavTree] = useState<NavItemWithChildren[]>(() => getInitialNavigationTree());
+  const [subNavItems, setSubNavItems] = useState<SubNavigationItem[]>(() => INITIAL_SUB_NAVIGATION_DATA.filter((i) => i.active));
+  const [subNavSettings, setSubNavSettings] = useState<SubNavSettings>(INITIAL_SUB_NAV_SETTINGS);
+  const [siteSettings, setSiteSettings] = useState<SiteSettings>(INITIAL_SITE_SETTINGS);
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
   const [selectedRegion, setSelectedRegion] = useState<string>('');
   const navRef = useRef<HTMLDivElement | null>(null);

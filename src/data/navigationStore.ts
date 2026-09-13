@@ -155,12 +155,8 @@ export function saveNavItems(items: NavigationItem[]): void {
   });
 }
 
-/**
- * Build 2-level public navigation tree (only active items, sorted by sortOrder)
- */
-export function getPublicNavigationTree(): NavigationItemWithChildren[] {
-  const allItems = getStoredNavItems();
-  const activeItems = allItems.filter((item) => item.active);
+function buildPublicTree(items: NavigationItem[]): NavigationItemWithChildren[] {
+  const activeItems = items.filter((item) => item.active);
 
   const parents: NavigationItemWithChildren[] = activeItems
     .filter((item) => !item.parentId)
@@ -185,6 +181,21 @@ export function getPublicNavigationTree(): NavigationItemWithChildren[] {
     });
 
   return parents;
+}
+
+/**
+ * Build deterministic initial 2-level public navigation tree from seed data.
+ * Safe for both SSR and initial Client Hydration (prevents mismatch).
+ */
+export function getInitialNavigationTree(): NavigationItemWithChildren[] {
+  return buildPublicTree(INITIAL_NAVIGATION_DATA);
+}
+
+/**
+ * Build 2-level public navigation tree (only active items, sorted by sortOrder)
+ */
+export function getPublicNavigationTree(): NavigationItemWithChildren[] {
+  return buildPublicTree(getStoredNavItems());
 }
 
 /**
