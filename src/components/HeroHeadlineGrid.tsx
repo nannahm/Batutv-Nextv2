@@ -60,8 +60,8 @@ export const defaultHeroHeadlineData: HeroHeadlineData = {
       imageAlt: 'Aksi mahasiswa menyampaikan aspirasi di hadapan publik',
       date: '27/08/2026',
       time: '08:43 WIB',
-      href: '/berita/fmn-ui-serukan-demo-di-istana-hari-ini',
-      slug: 'fmn-ui-serukan-demo-di-istana-hari-ini',
+      href: '',
+      slug: '',
     },
     {
       id: 's03-sub-2',
@@ -71,8 +71,8 @@ export const defaultHeroHeadlineData: HeroHeadlineData = {
       imageAlt: 'Aparat keamanan melakukan pengawasan dan pengamanan di sekitar lokasi',
       date: '27/08/2026',
       time: '08:31 WIB',
-      href: '/berita/jelang-demo-di-dpr-aparat-amankan-sejumlah-terduga-penyusup',
-      slug: 'jelang-demo-di-dpr-aparat-amankan-sejumlah-terduga-penyusup',
+      href: '',
+      slug: '',
     },
     {
       id: 's03-sub-3',
@@ -82,8 +82,8 @@ export const defaultHeroHeadlineData: HeroHeadlineData = {
       imageAlt: 'Spanduk tuntutan pemberantasan korupsi di depan gedung parlemen',
       date: '27/08/2026',
       time: '08:20 WIB',
-      href: '/berita/tuntutan-hukum-mati-koruptor-membentang-di-depan-dpr',
-      slug: 'tuntutan-hukum-mati-koruptor-membentang-di-depan-dpr',
+      href: '',
+      slug: '',
     },
     {
       id: 's03-sub-4',
@@ -93,8 +93,8 @@ export const defaultHeroHeadlineData: HeroHeadlineData = {
       imageAlt: 'Iring-iringan massa dan pengemudi ojek online menuju lokasi',
       date: '27/08/2026',
       time: '08:15 WIB',
-      href: '/berita/dikawal-ratusan-ojol-botok-tiba-di-gedung-dpr',
-      slug: 'dikawal-ratusan-ojol-botok-tiba-di-gedung-dpr',
+      href: '',
+      slug: '',
     },
   ],
   adBanner: {
