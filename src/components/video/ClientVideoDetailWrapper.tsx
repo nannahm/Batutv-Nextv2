@@ -1,40 +1,35 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
+import { useRouter } from 'next/navigation';
 import { VideoDetailPage } from './VideoDetailPage';
+import { AdminVideo } from '../../types/admin';
 
 interface ClientVideoDetailWrapperProps {
   slug: string;
+  initialVideo?: AdminVideo | null;
 }
 
-export default function ClientVideoDetailWrapper({ slug }: ClientVideoDetailWrapperProps) {
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+export default function ClientVideoDetailWrapper({
+  slug,
+  initialVideo,
+}: ClientVideoDetailWrapperProps) {
+  const router = useRouter();
 
   const handleNavigate = (path: string) => {
-    if (typeof window !== 'undefined') {
-      window.location.href = path;
-    }
+    router.push(path);
   };
-
-  if (!mounted) {
-    return (
-      <div className="min-h-screen bg-[#f8f9fa] flex items-center justify-center">
-        <div className="text-center font-bold text-slate-700">Memuat Video BatuTV...</div>
-      </div>
-    );
-  }
 
   return (
     <VideoDetailPage
       slug={slug}
+      initialVideo={initialVideo}
       onNavigate={handleNavigate}
       onSelectCategory={(cat) => handleNavigate(`/kategori/${cat.toLowerCase()}`)}
       onSelectTag={(tag) => handleNavigate(`/tag/${tag.toLowerCase()}`)}
-      onSelectAuthor={(author) => handleNavigate(`/penulis/${author.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`)}
+      onSelectAuthor={(author) =>
+        handleNavigate(`/penulis/${author.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`)
+      }
     />
   );
 }

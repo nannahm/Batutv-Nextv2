@@ -1,4 +1,5 @@
 import React from 'react';
+import { useRouter } from 'next/navigation';
 import { LatestNewsPost } from '../data/latestNewsData';
 import { resolveArticleHref } from '../utils/slugResolver';
 
@@ -29,6 +30,7 @@ export const NewsFeedItem: React.FC<NewsFeedItemProps> = ({
   lazyLoad = true,
   isLeadArticle = index === 0,
 }) => {
+  const router = useRouter();
   const resolvedHref = resolveArticleHref(post.slug, post.id, post.href);
   const itemHref = resolvedHref || undefined;
 
@@ -38,12 +40,17 @@ export const NewsFeedItem: React.FC<NewsFeedItemProps> = ({
       return;
     }
 
+    if (itemHref && itemHref !== '#' && itemHref.startsWith('/')) {
+      e.preventDefault();
+      router.push(itemHref);
+      return;
+    }
+
     // If href is missing or placeholder '#', fall back to onSelect handler with preventDefault
     if ((!itemHref || itemHref === '#') && onSelect) {
       e.preventDefault();
       onSelect(post);
     }
-    // If href is valid, let browser handle native navigation without triggering onSelect (avoids double-navigation)
   };
 
   return (

@@ -90,5 +90,6 @@ export default async function NextVideoDetailPage({
     notFound();
   }
 
-  return <ClientVideoDetailWrapper slug={slug} />;
+  const serializedVideo = result.video ? JSON.parse(JSON.stringify(result.video)) : null;
+  return <ClientVideoDetailWrapper slug={slug} initialVideo={serializedVideo} />;
 }

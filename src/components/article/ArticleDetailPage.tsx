@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { SocialShareGroup } from '../common/SocialShareGroup';
 import { NewsArticle } from '../../types/news';
+import { AdminArticle } from '../../types/admin';
 import { allNewsArticles, heroLeadArticle } from '../../data/dummyNews';
 import { defaultLatestNewsPosts, defaultPopularNews, defaultTrendingSidebarItems } from '../../data/latestNewsData';
 import { getArticleBySlug, getStoredArticles } from '../../data/newsAdminStore';
@@ -34,6 +35,7 @@ import { getBaseDomain } from '../../utils/seoGenerators';
 interface ArticleDetailPageProps {
   slug?: string;
   article?: NewsArticle | null;
+  initialArticle?: AdminArticle | null;
   onNavigate: (path: string) => void;
   onSelectCategory?: (categorySlug: string) => void;
   onSelectTag?: (tag: string) => void;
@@ -307,6 +309,7 @@ const safeFormatTags = (rawTags: unknown, fallback: { name: string; slug: string
 export const ArticleDetailPage: React.FC<ArticleDetailPageProps> = ({
   slug,
   article,
+  initialArticle,
   onNavigate,
   onSelectCategory,
   onSelectTag,
@@ -355,6 +358,75 @@ export const ArticleDetailPage: React.FC<ArticleDetailPageProps> = ({
 
   // Determine current article data to display
   const currentData: DetailedArticleData = React.useMemo(() => {
+    // 0. Priority: initialArticle passed from SSR
+    const effectiveAdminArticle = initialArticle;
+    if (effectiveAdminArticle) {
+      const rawParagraphs = effectiveAdminArticle.content
+        ? effectiveAdminArticle.content
+            .replace(/<h[1-6][^>]*>.*?<\/h[1-6]>/gi, '')
+            .replace(/<figure[^>]*>.*?<\/figure>/gi, '')
+            .replace(/<blockquote[^>]*>.*?<\/blockquote>/gi, '')
+            .split(/<\/?p>/)
+            .map((p) => cleanHtmlEntities(p.replace(/<[^>]*>?/gm, '')).trim())
+            .filter((p) => p.length > 0)
+        : [];
+
+      const pubDateStr = (() => {
+        try {
+          return (
+            new Date(effectiveAdminArticle.publishedAt).toLocaleDateString('id-ID', {
+              weekday: 'long',
+              day: 'numeric',
+              month: 'long',
+              year: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit',
+            }) + ' WIB'
+          );
+        } catch {
+          return effectiveAdminArticle.publishedAt;
+        }
+      })();
+
+      return {
+        id: effectiveAdminArticle.id,
+        slug: effectiveAdminArticle.slug,
+        category: (effectiveAdminArticle.category || 'DAERAH').toUpperCase(),
+        categorySlug: effectiveAdminArticle.categorySlug || 'daerah',
+        title: effectiveAdminArticle.title,
+        subheadline: cleanHtmlEntities(effectiveAdminArticle.excerpt || defaultSpecificArticle.subheadline),
+        author: {
+          name: effectiveAdminArticle.author || 'Muhamad Yandi',
+          role: 'Jurnalis',
+          slug: (effectiveAdminArticle.author || 'muhamad-yandi').toLowerCase().replace(/\s+/g, '-'),
+          avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=200&auto=format&fit=crop',
+          bio: defaultSpecificArticle.author.bio,
+        },
+        publishedAt: pubDateStr,
+        publishedIso: effectiveAdminArticle.publishedAt,
+        updatedAt: effectiveAdminArticle.updatedAt,
+        updatedIso: effectiveAdminArticle.updatedAt,
+        readTime: `${Math.max(2, Math.ceil((effectiveAdminArticle.content?.length || 500) / 400))} menit baca`,
+        views: effectiveAdminArticle.views || 120,
+        featuredImage: {
+          url: effectiveAdminArticle.featuredImage || defaultSpecificArticle.featuredImage.url,
+          alt: effectiveAdminArticle.imageAlt || effectiveAdminArticle.title,
+          caption: effectiveAdminArticle.imageCaption || `Dokumentasi: ${effectiveAdminArticle.title}. (Foto: BatuTV)`,
+        },
+        fullHtmlContent: effectiveAdminArticle.content || undefined,
+        contentSections: {
+          introParagraphs: rawParagraphs.slice(0, 2).length > 0 ? rawParagraphs.slice(0, 2) : defaultSpecificArticle.contentSections.introParagraphs,
+          subheading1: 'Kondisi dan Situasi Terkini',
+          paragraphs1: rawParagraphs.slice(2, 4).length > 0 ? rawParagraphs.slice(2, 4) : defaultSpecificArticle.contentSections.paragraphs1,
+          quote: defaultSpecificArticle.contentSections.quote,
+          secondImage: defaultSpecificArticle.contentSections.secondImage,
+          subheading2: 'Dukungan dan Rencana Lanjutan',
+          paragraphs2: rawParagraphs.slice(4).length > 0 ? rawParagraphs.slice(4) : defaultSpecificArticle.contentSections.paragraphs2,
+        },
+        tags: safeFormatTags(effectiveAdminArticle.tags),
+      };
+    }
+
     // If a specific article object was passed in or matching slug found
     if (article) {
       return {
@@ -507,7 +579,7 @@ export const ArticleDetailPage: React.FC<ArticleDetailPageProps> = ({
     }
 
     return defaultSpecificArticle;
-  }, [article, slug]);
+  }, [article, initialArticle, slug]);
 
   // SEO: Dynamic title, meta description, canonical, Open Graph and Structured Data (JSON-LD)
   useEffect(() => {

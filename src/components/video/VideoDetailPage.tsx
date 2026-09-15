@@ -32,6 +32,7 @@ import {
   getLiveLatestVideosFeed,
   resolveVideoThumbnailUrl,
 } from '../../data/videoAdminStore';
+import { AdminVideo } from '../../types/admin';
 import { getMediaById } from '../../data/mediaAdminStore';
 import { getStoredSiteSettings } from '../../data/siteSettingsStore';
 import { getBaseDomain } from '../../utils/seoGenerators';
@@ -45,6 +46,7 @@ import {
 
 interface VideoDetailPageProps {
   slug?: string;
+  initialVideo?: AdminVideo | null;
   onNavigate: (path: string) => void;
   onSelectCategory?: (categorySlug: string) => void;
   onSelectTag?: (tag: string) => void;
@@ -84,6 +86,7 @@ function formatIndonesianDate(dateInput?: string): string {
 
 export const VideoDetailPage: React.FC<VideoDetailPageProps> = ({
   slug,
+  initialVideo,
   onNavigate,
   onSelectCategory,
   onSelectTag,
@@ -91,66 +94,64 @@ export const VideoDetailPage: React.FC<VideoDetailPageProps> = ({
   onBookmark,
   isBookmarked = false,
 }) => {
-  // Resolve current video from slug or fallback to featured published video
+  // Resolve current video from initialVideo, slug, or fallback to featured published video
   const currentVideo: DetailedVideoData = useMemo(() => {
-    const allPublished = getPublishedLiveVideos();
+    // 0. Priority: initialVideo from SSR
+    const targetVid = initialVideo || (slug ? getVideoBySlug(slug) : null);
+    if (targetVid) {
+      const vidId =
+        targetVid.youtubeVideoId ||
+        extractYouTubeVideoId(targetVid.youtubeUrl) ||
+        'dQw4w9WgXcQ';
+      const ytUrl =
+        targetVid.youtubeUrl || `https://www.youtube.com/watch?v=${vidId}`;
+      const poster = resolveVideoThumbnailUrl(targetVid);
 
-    // 1. If slug is provided, search in videoAdminStore
-    if (slug) {
-      const adminVid = getVideoBySlug(slug);
-      if (adminVid) {
-        const vidId =
-          adminVid.youtubeVideoId ||
-          extractYouTubeVideoId(adminVid.youtubeUrl) ||
-          'dQw4w9WgXcQ';
-        const ytUrl =
-          adminVid.youtubeUrl || `https://www.youtube.com/watch?v=${vidId}`;
-        const poster = resolveVideoThumbnailUrl(adminVid);
-
-        return {
-          ...defaultMainVideo,
-          id: adminVid.id,
-          slug: adminVid.slug,
-          title: adminVid.title,
-          category: adminVid.category ? adminVid.category.toUpperCase() : 'BERITA',
-          categorySlug:
-            adminVid.categorySlug ||
-            (adminVid.category || 'berita')
-              .toLowerCase()
-              .replace(/[^a-z0-9]+/g, '-'),
-          summary: adminVid.excerpt || adminVid.description?.slice(0, 180) || defaultMainVideo.summary,
-          descriptionHtml: adminVid.description || undefined,
-          descriptionParagraphs: adminVid.description
-            ? adminVid.description.split('\n\n').filter(Boolean)
-            : defaultMainVideo.descriptionParagraphs,
-          duration: adminVid.duration || '04:30',
-          durationIso: formatDurationToIso8601(adminVid.duration),
-          views: adminVid.views || 2450,
-          youtubeVideoId: vidId,
-          youtubeUrl: ytUrl,
-          videoUrl: ytUrl,
-          posterUrl: poster,
-          tags:
-            adminVid.tags && adminVid.tags.length > 0
-              ? adminVid.tags.map((t) => ({
-                  name: t,
-                  slug: t.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
-                }))
-              : defaultMainVideo.tags,
-          author: {
-            ...defaultMainVideo.author,
-            name: adminVid.author || 'Tim Redaksi BatuTV',
-            slug: (adminVid.author || 'tim-redaksi')
-              .toLowerCase()
-              .replace(/[^a-z0-9]+/g, '-'),
-          },
-          publishedAt: formatIndonesianDate(adminVid.publishedAt),
-          publishedIso: formatDateToIso8601(adminVid.publishedAt),
-          updatedAt: formatIndonesianDate(adminVid.updatedAt || adminVid.publishedAt),
-          updatedIso: formatDateToIso8601(adminVid.updatedAt || adminVid.publishedAt),
-        };
-      }
+      return {
+        ...defaultMainVideo,
+        id: targetVid.id,
+        slug: targetVid.slug,
+        title: targetVid.title,
+        category: targetVid.category ? targetVid.category.toUpperCase() : 'BERITA',
+        categorySlug:
+          targetVid.categorySlug ||
+          (targetVid.category || 'berita')
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-'),
+        summary: targetVid.excerpt || targetVid.description?.slice(0, 180) || defaultMainVideo.summary,
+        descriptionHtml: targetVid.description || undefined,
+        descriptionParagraphs: targetVid.description
+          ? targetVid.description.split('\n\n').filter(Boolean)
+          : defaultMainVideo.descriptionParagraphs,
+        duration: targetVid.duration || '04:30',
+        durationIso: formatDurationToIso8601(targetVid.duration),
+        views: targetVid.views || 2450,
+        youtubeVideoId: vidId,
+        youtubeUrl: ytUrl,
+        videoUrl: ytUrl,
+        posterUrl: poster,
+        tags:
+          targetVid.tags && targetVid.tags.length > 0
+            ? targetVid.tags.map((t) => ({
+                name: t,
+                slug: t.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+              }))
+            : defaultMainVideo.tags,
+        author: {
+          ...defaultMainVideo.author,
+          name: targetVid.author || 'Tim Redaksi BatuTV',
+          slug: (targetVid.author || 'tim-redaksi')
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-'),
+        },
+        publishedAt: formatIndonesianDate(targetVid.publishedAt),
+        publishedIso: formatDateToIso8601(targetVid.publishedAt),
+        updatedAt: formatIndonesianDate(targetVid.updatedAt || targetVid.publishedAt),
+        updatedIso: formatDateToIso8601(targetVid.updatedAt || targetVid.publishedAt),
+      };
     }
+
+    const allPublished = getPublishedLiveVideos();
 
     // 2. If no slug or slug not found, pick the featured/top published video
     const topVid = getLiveFeaturedVideo() || allPublished[0];
@@ -208,7 +209,7 @@ export const VideoDetailPage: React.FC<VideoDetailPageProps> = ({
     }
 
     return defaultMainVideo;
-  }, [slug]);
+  }, [initialVideo, slug]);
 
   // Dynamic Related & Latest Videos Feed from videoAdminStore
   const dynamicRelatedVideos = useMemo(() => {

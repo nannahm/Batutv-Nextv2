@@ -1,4 +1,5 @@
 import React from 'react';
+import { useRouter } from 'next/navigation';
 import { NewsArticle } from '../types/news';
 import { getOptimizedImageUrl } from '../utils/imageOptimizer';
 import { TerpopulerWidget, TerpopulerItem, defaultTerpopulerNews } from './TerpopulerWidget';
@@ -133,6 +134,7 @@ export const HeroHeadlineGrid: React.FC<HeroHeadlineGridProps> = ({
   onSelectArticle,
   onNavigateMore,
 }) => {
+  const router = useRouter();
   const { main, subHeadlines = defaultHeroHeadlineData.subHeadlines, terpopuler = defaultTerpopulerNews } = data;
 
   const handleCardClick = (e: React.MouseEvent<HTMLAnchorElement>, item: HeadlineArticleData) => {
@@ -141,12 +143,17 @@ export const HeroHeadlineGrid: React.FC<HeroHeadlineGridProps> = ({
       return;
     }
 
+    if (item.href && item.href !== '#' && item.href.startsWith('/')) {
+      e.preventDefault();
+      router.push(item.href);
+      return;
+    }
+
     // If href is missing or placeholder '#', fall back to onSelectArticle handler with preventDefault
     if ((!item.href || item.href === '#') && onSelectArticle) {
       e.preventDefault();
       onSelectArticle(item);
     }
-    // If href is valid, let browser handle native navigation without triggering onSelectArticle (avoids double-navigation)
   };
 
   return (

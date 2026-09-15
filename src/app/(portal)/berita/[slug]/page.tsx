@@ -91,5 +91,6 @@ export default async function NextArticleDetailPage({
     notFound();
   }
 
-  return <ClientArticleDetailWrapper slug={slug} />;
+  const serializedArticle = result.article ? JSON.parse(JSON.stringify(result.article)) : null;
+  return <ClientArticleDetailWrapper slug={slug} initialArticle={serializedArticle} />;
 }
